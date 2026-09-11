@@ -35,6 +35,7 @@ const W = parseInt(getArg('w', '1280'), 10);
 const H = parseInt(getArg('h', '800'), 10);
 const SHOT = getArg('shot', '');
 const KEEP = args.indexOf('--keep') >= 0;
+const VERBOSE = args.indexOf('--verbose') >= 0;   /* 打印每一项断言，人工复核时用 */
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -227,9 +228,11 @@ const DRILL_STEPS = [
     label: '如意锤 · 结算',
     expr: `(function () {
       var G = LL.Game, cost = LL.CFG.SKILLS.hammer.cost;
+      /* 效果断言要在 tapCell 之后**同步**取：applyClear 是同步跑完的，
+       * 之后动画收束时才补位，所以此刻目标格应当是空的。 */
       G.tapCell(__t.stone);
       __ck(!G.aim, '命中后自动退出瞄准态');
-      /* 单格锤击的回灵上限 = 破障 6 + 引爆 5，所以扣费一定落在 [cost, cost-11] 区间 */
+      __ck(G.board.cells[__t.stone.r][__t.stone.c] === null, '目标格当场被清掉（真的动了盘面）');
       __ck(G.qi <= __t.qiBefore - cost + 11 && G.qi >= __t.qiBefore - cost,
         '如意锤扣 ' + cost + ' 灵力（' + __t.qiBefore + '→' + G.qi + '，破障回灵已计入）');
       __ck(G.movesLeft === __t.moves0, '如意锤不消耗步数');
@@ -272,12 +275,19 @@ const DRILL_STEPS = [
       G.qi = 120;
       var before = G.qi;
       __ck(G.useSkill('cross') && G.aim.id === 'cross', '移山进入瞄准态');
-      __t.rowCells = 0;
-      for (var c = 0; c < G.board.C; c++) if (G.board.cells[3][c]) __t.rowCells++;
+      /* 先数一遍第 4 行与第 4 列上有多少格真的有块 */
+      __t.crossCells = 0;
+      for (var c = 0; c < G.board.C; c++) if (G.board.cells[3][c]) __t.crossCells++;
+      for (var r = 0; r < G.board.R; r++) if (r !== 3 && G.board.cells[r][3]) __t.crossCells++;
+      __ck(__t.crossCells >= 12, '测试前提：十字上本来有 ' + __t.crossCells + ' 格');
       G.tapCell({ r: 3, c: 3 });
+      /* 同步取：此刻十字应当是空的（补位还没发生） */
+      var left = 0;
+      for (var c2 = 0; c2 < G.board.C; c2++) if (G.board.cells[3][c2]) left++;
+      for (var r2 = 0; r2 < G.board.R; r2++) if (r2 !== 3 && G.board.cells[r2][3]) left++;
+      __ck(left === 0, '整行整列当场被清空（剩 ' + left + ' 格）');
       __ck(G.qi < before && G.qi <= LL.CFG.QI.MAX, '移山扣灵力且不越上限（' + before + '→' + G.qi + '）');
       __ck(G.movesLeft === __t.moves0, '移山不消耗步数');
-      __ck(__t.rowCells >= 8, '测试前提：第 4 行本来有 ' + __t.rowCells + ' 格可清');
       return true;
     })()`
   },
@@ -320,9 +330,33 @@ const DRILL_STEPS = [
       var G = LL.Game, cost = LL.CFG.SKILLS.swap.cost;
       G.qi = 120;
       var before = G.qi;
+      /* 把盘面记下来：换天的唯一效果就是「盘面变了」，
+       * 所以必须断言它真的变了——早先正是这里漏了断言，
+       * 导致「扣灵力、放特效、但根本没重排」的 bug 溜了过去。 */
+      var snap = [];
+      for (var r = 0; r < G.board.R; r++) for (var c = 0; c < G.board.C; c++) {
+        var tl = G.board.cells[r][c];
+        snap.push(tl ? tl.t : -1);
+      }
+      __t.swapSnap = snap.join(',');
+      /* 直接盯着 Resolver.shuffle 有没有被调用：只断言「盘面变了」可能被
+       * 「恰好有个三连被清掉」蒙对，必须确认走的就是洗牌这条路。 */
+      var origShuffle = LL.Resolver.shuffle, shuffled = 0;
+      LL.Resolver.shuffle = function (rs) { shuffled++; return origShuffle.call(LL.Resolver, rs); };
       G.useSkill('swap');
+      LL.Resolver.shuffle = origShuffle;
+      __ck(shuffled >= 1, '换天确实走了洗牌（Resolver.shuffle 调用 ' + shuffled + ' 次）');
+      var after = [];
+      for (var r2 = 0; r2 < G.board.R; r2++) for (var c2 = 0; c2 < G.board.C; c2++) {
+        var tl2 = G.board.cells[r2][c2];
+        after.push(tl2 ? tl2.t : -1);
+      }
+      __ck(after.join(',') !== __t.swapSnap,
+        '盘面确实被重排（' + after.filter(function (v, i) { return String(v) !== snap[i]; }).length +
+        '/64 格的块换了位置）');
       __ck(!G.aim && G.qi === before - cost, '换天扣 ' + cost + ' 灵力且不需要瞄准');
       __ck(G.movesLeft === __t.moves0, '换天不消耗步数');
+      __ck(G.board.cells[0][0] !== null, '重排后棋盘仍是满的（没有洗出空格）');
       return true;
     })()`
   },
@@ -359,6 +393,22 @@ const DRILL_STEPS = [
       G.qi = LL.CFG.LAST_STAND.cost - 1; G.movesLeft = 0; G.lastStandUsed = 0;
       G.finishTurnInner();
       __ck(!G.pendingLastStand, '灵力不够时不提供（不推销）');
+      return true;
+    })()`
+  },
+  {
+    label: '换天与匹配扫描是两条路',
+    expr: `(function () {
+      /* 修复前换天错走 beginScan：灵力扣了、特效放了、盘面纹丝不动。
+       * 这里确认 beginScan 本身**不会**洗牌——也就是说上面那条「shuffle 被调用」的断言
+       * 是真正在守着这个 bug，而不是被别的路径顺手满足的。 */
+      var orig = LL.Resolver.shuffle, calls = 0;
+      LL.Resolver.shuffle = function (rs) { calls++; return orig.call(LL.Resolver, rs); };
+      var g = 0, ev;
+      LL.Resolver.beginScan(LL.Game.rs);
+      while ((ev = LL.Resolver.step(LL.Game.rs)) && g++ < 300) { if (ev.kind === 'turnEnd') break; }
+      LL.Resolver.shuffle = orig;
+      __ck(calls === 0, 'beginScan 不洗牌，所以换天必须显式走 shuffle（调用 ' + calls + ' 次）');
       return true;
     })()`
   },
@@ -795,7 +845,10 @@ const IMAGE_AUDIT = `(function () {
       }
     }
     const drill = await cdp.evaluate('({ steps: __t.steps, fail: __t.fail })');
-    drill.steps.forEach(function (s) { if (s.indexOf('ok  ') !== 0) console.log('  ✗ ' + s.slice(5)); });
+    drill.steps.forEach(function (s) {
+      if (s.indexOf('ok  ') !== 0) console.log('  ✗ ' + s.slice(5));
+      else if (VERBOSE) console.log('  ✓ ' + s.slice(4));
+    });
     report('技能演练 ' + (drill.steps.length - drill.fail.length) + '/' + drill.steps.length + ' 项',
       drill.fail.length === 0, drill.fail.slice(0, 3).join(' | '));
 

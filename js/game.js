@@ -310,11 +310,12 @@
       this.castSkill(aim.id, cell, -1, aim.cost);
     },
 
-    /* 真正释放：扣灵力 → 出特效 → 把计划交给 Resolver 走完整回合 */
+    /* 真正释放：扣灵力 → 出特效 → 交给 Resolver 走完整回合
+     * 换天是唯一的例外：它不消除任何东西，所以不走消除流水线（见下面的分支）。 */
     castSkill(id, cell, color, cost) {
       if (this.state !== 'playing') return false;
       if (cost > this.qi) { LL.Audio.play('invalid'); return false; }
-      const plan = id === 'color' ? null : SK.plan(this.board, id, cell);
+      const plan = (id === 'color' || id === 'swap') ? null : SK.plan(this.board, id, cell);
       if (id === 'color' && !SK.recolor(this.board, cell, color)) {
         LL.Audio.play('invalid');
         return false;
@@ -331,6 +332,23 @@
       this.hint = null;
       this.idleT = 0;
       this.state = 'resolving';
+
+      /* 换天：只把盘子重排一遍，不炸不消，所以走「死局洗牌」那条路
+       *（R.shuffle + shuffle 动画），而不是 beginSkill 的消除流程。
+       * 早先这里漏了这个分支，plan 又是 null，于是落进了「匹配扫描」——
+       * 扣了灵力、特效也放了，盘面却纹丝不动：玩家看到的就是「这个技能没效果」。
+       * 它同样不吃步数，动画放完直接交回操作。 */
+      if (id === 'swap') {
+        const self = this;
+        const sev = R.shuffle(this.rs);
+        LL.Anim.play(sev, function () {
+          if (sev.needsShuffleAfter) R.shuffle(self.rs);   /* 极端情况：洗牌后仍无解，重铺 */
+          self.state = 'playing';
+          self.notifyInput();
+        });
+        return true;
+      }
+
       if (plan) R.beginSkill(this.rs, plan);
       else R.beginScan(this.rs);      /* 灵犀一点：改完色让正常匹配扫描接着跑 */
       this.next();

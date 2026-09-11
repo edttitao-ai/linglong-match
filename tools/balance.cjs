@@ -189,6 +189,11 @@ function anyPlainCell(b, rnd) {
 
 /* 释放技能并跑完整个回合（技能不吃步数，所以只加消除不扣 moves） */
 function castSkill(rs, b, plan, level, st) {
+  if (plan.id === 'swap') {
+    /* 换天不消除，只重排——和 Game.castSkill 里那条分支保持一致 */
+    R.shuffle(rs);
+    return true;
+  }
   if (plan.id === 'color') {
     if (!SK.recolor(b, plan.cell, plan.color)) return false;
     R.beginScan(rs);
