@@ -11,12 +11,17 @@
  *   4. 组合效果范围（风+风 / 雷+雷 / 太极与任意 / 太极+太极 / 风+雷）
  *   5. 障碍规则（霜 / 石锁分层、藤蔓锁定与重力分段）
  *   6. 死局洗牌必定产出可玩棋盘
+ *   7. 关卡数据合法性
+ *   8. 模块 API 完整性
+ *   9. 局内技能与灵力（四个技能的消除计划、灵力收支、绝处逢生、回合流水线）
  */
 'use strict';
 const path = require('path');
 
-/* 以 CommonJS 方式加载浏览器脚本（它们挂在 globalThis.LL 上） */
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js',
+/* 以 CommonJS 方式加载浏览器脚本（它们挂在 globalThis.LL 上）。
+ * 文案文件也一起加载：这样第 9 节的「资产与文案齐全」才能真的查到字典。 */
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'levels.js',
+  '../lang/zh.js', '../lang/en.js',
   'i18n.js', 'progress.js', 'quests.js', 'daily.js', 'modes.js', 'achievements.js',
   'anim.js', 'assets.js', 'audio.js', 'render.js', 'hud.js', 'input.js', 'game.js', 'ui.js'].forEach(function (f) {
   require(path.join(__dirname, '..', 'js', f));
@@ -25,7 +30,7 @@ const path = require('path');
  * 因此可以安全加载，用来做「引用的方法是否存在」这类静态检查。
  * main.js 会立即执行 boot()，故意不加载。 */
 const LL = globalThis.LL;
-const CFG = LL.CFG, U = LL.U, B = LL.Board, SP = LL.Special, R = LL.Resolver;
+const CFG = LL.CFG, U = LL.U, B = LL.Board, SP = LL.Special, R = LL.Resolver, SK = LL.Skills;
 const S = CFG.SPECIAL, O = CFG.OBST;
 
 /* ---------- 断言 ---------- */
@@ -509,7 +514,9 @@ section('8. 模块 API 完整性（源码引用的方法必须存在）');
       'hasValidMove', 'applyClear', 'applyGravity', 'shuffleBoard'],
     Special: ['decideSpecialFor', 'pickSpawnCell', 'blastCells', 'expandClear', 'planMatches',
       'planCombo', 'buildComboClear'],
-    Resolver: ['create', 'beginTurn', 'step', 'runTurn', 'shuffle'],
+    Resolver: ['create', 'beginTurn', 'beginSkill', 'beginScan', 'step', 'runTurn', 'shuffle'],
+    Skills: ['def', 'order', 'qiStartFor', 'qiScaleFor', 'gainMult', 'gain', 'addQi', 'isFull',
+      'cost', 'canUse', 'validTarget', 'planHammer', 'planCross', 'recolor', 'plan', 'lastStandOffer'],
     Daily: ['build', 'hash', 'buildLayout'],
     Quests: ['generate', 'reroll', 'describe', 'progressText', 'apply'],
     Modes: ['endlessLevel', 'timedLevel', 'timedCoins', 'endlessCoins'],
@@ -524,6 +531,202 @@ section('8. 模块 API 完整性（源码引用的方法必须存在）');
     });
   });
   eq(badApi.length, 0, '模块契约方法齐全' + (badApi.length ? '，缺失：' + badApi.slice(0, 8).join(' ｜ ') : ''));
+}
+
+/* ---------- 9. 局内技能与灵力 ---------- */
+section('9. 局内技能与灵力');
+{
+  const QI = CFG.QI, LS = CFG.LAST_STAND;
+
+  /* 9a. 数据表本身要自洽：价格与开局赠送、上限与技能价格的关系站得住 */
+  const order = SK.order();
+  eq(order.length, CFG.SKILLS.order.length, '技能数量与配置一致');
+  let costProblems = [];
+  order.forEach(function (id) {
+    const d = SK.def(id);
+    if (!d) { costProblems.push(id + ' 未定义'); return; }
+    if (!(d.cost > 0)) costProblems.push(id + ' 价格非正');
+    if (d.aim !== 'none' && d.aim !== 'cell' && d.aim !== 'color') costProblems.push(id + ' 目标类型非法：' + d.aim);
+  });
+  eq(costProblems.length, 0, '技能配置合法' + (costProblems.length ? '：' + costProblems.join(' | ') : ''));
+  ok(QI.START >= Math.min.apply(null, order.map(function (id) { return SK.def(id).cost; })),
+    '开局赠送的灵力至少够放一次最便宜的技能（保证一进场就能体验）');
+  ok(QI.MAX >= CFG.SKILLS.cross.cost, '灵力上限至少够放一次最贵的技能');
+  ok(QI.MAX < CFG.SKILLS.cross.cost * 4, '灵力上限存不住四次大招（上限必须有意义）');
+  ok(LS.cost >= CFG.SKILLS.cross.cost, '绝处逢生的代价不低于一次移山');
+
+  /* 9b. 如意锤：只打一格，但能一锤破开石锁（2 点破障），且第二击不重复计格 */
+  const hb = B.create({ colors: 5, rnd: U.rng(41) });
+  hb.obst[4][4] = { k: O.STONE, hp: CFG.OBST_INFO[2].hp };
+  const hp = SK.planHammer(hb, { r: 4, c: 4 });
+  eq(hp.keys.size, 1, '如意锤只锁定一格');
+  eq(hp.secondHit.length, 1, '如意锤带一次追加击打');
+  const hrs = R.create(hb);
+  ok(R.beginSkill(hrs, hp).ok, '如意锤回合可以发起');
+  const hev = R.step(hrs);
+  eq(hev && hev.kind, 'clear', '如意锤首个事件是消除');
+  eq(hev && hev.skill, true, '技能消除事件带 skill 标记（表现层据此走技能特效）');
+  eq(hev && hev.cause, 'skill_hammer', '如意锤事件的 cause 正确');
+  ok(hb.obst[4][4] === null, '石锁被一锤破开（2 点伤害）');
+  eq(hev.obstacles.filter(function (o) { return o.broken; }).length, 1, '破障只计一次');
+  eq(hev.cells.length, 1, '只清除目标格，第二击不重复计格');
+  let hGuard = 0, hLast = hev;
+  while (hLast && hLast.kind !== 'turnEnd' && hGuard++ < 300) hLast = R.step(hrs);
+  ok(hLast && hLast.kind === 'turnEnd', '如意锤回合能正常收束');
+  eq(B.findMatches(hb).length, 0, '如意锤回合结束后无残留三连');
+  let hEmpty = true;
+  for (let r = 0; r < hb.R; r++) for (let c = 0; c < hb.C; c++) if (hb.playable[r][c] && !hb.cells[r][c]) hEmpty = false;
+  ok(hEmpty, '如意锤回合结束后棋盘无空格');
+
+  /* 9c. 移山：十字覆盖整行 + 整列 */
+  const cb = B.create({ colors: 5, rnd: U.rng(43) });
+  const cp = SK.planCross(cb, { r: 2, c: 5 });
+  eq(cp.keys.size, cb.R + cb.C - 1, '移山覆盖整行整列（' + (cb.R + cb.C - 1) + ' 格）');
+  const crs = R.create(cb);
+  R.beginSkill(crs, cp);
+  const cev = R.step(crs);
+  eq(cev && cev.cause, 'skill_cross', '移山事件的 cause 正确');
+  ok(cev.cells.length >= cb.R + cb.C - 1 - 2, '移山确实清掉了十字上的格子');
+  let cGuard = 0, cLast = cev;
+  while (cLast && cLast.kind !== 'turnEnd' && cGuard++ < 400) cLast = R.step(crs);
+  ok(cLast && cLast.kind === 'turnEnd', '移山回合能正常收束');
+  eq(B.findMatches(cb).length, 0, '移山回合结束后无残留三连');
+
+  /* 9d. 灵犀一点：改色只认普通块，改完色由匹配扫描自然连锁 */
+  const rb = B.create({ colors: 4, rnd: U.rng(47) });
+  /* 造一个「差一块」的局面：某行两个同色隔一格 */
+  rb.cells[0][0] = B.tile(1, 0); rb.cells[0][1] = B.tile(2, 0); rb.cells[0][2] = B.tile(1, 0);
+  rb.cells[0][3] = B.tile(3, 0); rb.cells[1][0] = B.tile(2, 0); rb.cells[1][1] = B.tile(3, 0);
+  rb.cells[1][2] = B.tile(0, 0); rb.cells[1][3] = B.tile(2, 0);
+  ok(SK.recolor(rb, { r: 0, c: 1 }, 1), '改色成功');
+  eq(rb.cells[0][1].t, 1, '目标格颜色已改变');
+  ok(!SK.recolor(rb, { r: 0, c: 1 }, 99), '越界颜色被拒绝');
+  rb.cells[2][2] = B.tile(0, S.THUNDER);
+  ok(!SK.recolor(rb, { r: 2, c: 2 }, 1), '特殊块不接受改色（否则会变成无法理解的组合）');
+  eq(SK.validTarget(rb, { r: 2, c: 2 }, 'color'), false, '特殊块不是灵犀一点的合法目标');
+  eq(SK.validTarget(rb, { r: 2, c: 2 }, 'hammer'), true, '特殊块可以是如意锤的目标（引爆它）');
+  /* 改色后接入匹配扫描：刚凑出的三连必须真的被消掉 */
+  const rrs = R.create(rb);
+  ok(R.beginScan(rrs).ok, '匹配扫描回合可以发起');
+  const rev = R.step(rrs);
+  ok(rev && rev.kind === 'clear' && rev.cells.length >= 3, '改色凑出的三连被正常结算（连锁）');
+
+  /* 9e. 伤害类技能的引爆链：目标格上的特殊块必须照常炸开 */
+  const wb = B.create({ colors: 5, rnd: U.rng(53) });
+  wb.cells[3][3] = B.tile(2, S.WIND_H);
+  const wp = SK.planHammer(wb, { r: 3, c: 3 });
+  eq(wp.keys.size, wb.C, '锤到横风符会引爆整行');
+  eq(wp.fires.length, 1, '引爆记录里有横风符');
+  const cro = B.create({ colors: 5, rnd: U.rng(59) });
+  cro.cells[3][3] = B.tile(2, S.WIND_H);
+  cro.cells[5][3] = B.tile(2, S.THUNDER);
+  const xx = SK.planCross(cro, { r: 3, c: 3 });
+  ok(xx.fires.length >= 2, '移山会沿着十字链式引爆多个特殊块（实际 ' + xx.fires.length + '）');
+
+  /* 9e-2. 技能回合之后的连锁不能崩：技能没有交换的两格（a/b 为 null），
+   * 匹配生成落点偏好必须容忍这一点（这里曾因 [null,null] 抛 TypeError）。 */
+  let cascadeRuns = 0, cascadeCrash = null;
+  for (let seed = 0; seed < 40; seed++) {
+    const sb = B.create({ colors: 4, rnd: U.rng(900 + seed) });
+    const srs = R.create(sb);
+    /* 用移山清掉十字，最容易在重力后带出连锁 */
+    try {
+      R.beginSkill(srs, SK.planCross(sb, { r: (seed % 8), c: ((seed * 3) % 8) }));
+      let g = 0, ev = null, sawCascade = false;
+      while ((ev = R.step(srs)) && g++ < 500) {
+        if (ev.kind === 'clear' && ev.cascade >= 2) sawCascade = true;
+        if (ev.kind === 'turnEnd') break;
+      }
+      if (sawCascade) cascadeRuns++;
+      ok(!!ev && ev.kind === 'turnEnd', '技能回合 ' + seed + ' 能收束到 turnEnd');
+    } catch (e) {
+      cascadeCrash = seed + ': ' + e.message;
+      break;
+    }
+  }
+  eq(cascadeCrash, null, '技能回合带出连锁不会崩' + (cascadeCrash ? '（种子 ' + cascadeCrash + '）' : ''));
+  ok(cascadeRuns > 0, '确实构造出了技能后的连锁场景（' + cascadeRuns + '/40 局）');
+
+  /* 9f. 灵力收支：公式、上限、溢出转分、背水一战倍率 */
+  eq(SK.gain({ cells: new Array(10).fill({ t: 0 }), obstacles: [{ broken: true }, { broken: false }], fires: [{}], cascade: 2 }, 1),
+    QI.PER_TILE * 10 + QI.PER_CASCADE + QI.PER_OBSTACLE + QI.PER_FIRE, '灵力获取公式（消块/连锁/破障/引爆）');
+  eq(SK.gain({ cells: [], obstacles: [], fires: [], cascade: 1, cause: 'combo' }, 1), QI.PER_COMBO, '组合额外给灵力');
+  eq(SK.gain({ cells: new Array(5).fill({ t: 0 }), obstacles: [], fires: [], cascade: 1 }, 2),
+    QI.PER_TILE * 5 * 2, '倍率生效');
+  ok(SK.gainMult(QI.LAST_STAND_AT, false) === QI.LAST_STAND_MULT, '步数见底时灵力获取翻倍（背水一战）');
+  eq(SK.gainMult(QI.LAST_STAND_AT + 1, false), 1, '步数充裕时不翻倍');
+  eq(SK.gainMult(1, true), 1, '限时模式没有步数概念，不翻倍');
+  const a1 = SK.addQi(QI.MAX - 10, 25);
+  eq(a1.qi, QI.MAX, '灵力不会超过上限');
+  eq(a1.overflow, 15, '溢出量正确');
+  eq(a1.score, 15 * QI.OVERFLOW_SCORE, '溢出按比例折算成分数');
+  const a2 = SK.addQi(0, 5);
+  eq(a2.qi, 5, '未满槽时不溢出');
+  ok(SK.isFull(QI.MAX) && !SK.isFull(QI.MAX - 1), '满槽判定');
+
+  /* 9g. 可用性：灵力不够不放、无路可走时换天免费 */
+  const ub = B.create({ colors: 5, rnd: U.rng(61) });
+  eq(SK.canUse(ub, 0, 'hammer').reason, 'qi', '灵力不足时不放技能');
+  eq(SK.canUse(ub, 0, 'hammer').ok, false, '灵力不足时 ok=false');
+  ok(SK.canUse(ub, QI.MAX, 'cross').ok, '灵力充足时可用');
+  eq(SK.canUse(ub, QI.MAX, 'nope').reason, 'unknown', '未知技能被拒绝');
+  /* 一个人为造出的死局（拉丁方）：换天应当免费 */
+  const dead = B.create({ colors: 4, rnd: U.rng(67) });
+  for (let r = 0; r < dead.R; r++) for (let c = 0; c < dead.C; c++) dead.cells[r][c] = B.tile((r + c) % 4, 0);
+  eq(B.hasValidMove(dead), false, '造出的盘面确实无解');
+  eq(SK.cost(dead, 'swap'), 0, '无路可走时换天免费（不让你因为没灵力卡死）');
+  eq(SK.cost(dead, 'hammer'), CFG.SKILLS.hammer.cost, '其它技能不跟着免费');
+  ok(SK.canUse(dead, 0, 'swap').ok, '没灵力也能用免费的换天');
+
+  /* 9h. 目标格合法性 */
+  const tb = B.create({ colors: 5, rnd: U.rng(71) });
+  tb.obst[6][6] = { k: O.FROST, hp: 1 };
+  tb.cells[6][6] = null;
+  eq(SK.validTarget(tb, { r: 6, c: 6 }, 'hammer'), true, '空格上的障碍可以是锤子目标（破障）');
+  tb.cells[6][6] = null;
+  eq(SK.validTarget(tb, { r: 6, c: 6 }, 'color'), false, '空格不能改色');
+  eq(SK.validTarget(tb, { r: 99, c: 0 }, 'cross'), false, '棋盘外不是合法目标');
+  tb.playable[7][7] = false;
+  eq(SK.validTarget(tb, { r: 7, c: 7 }, 'cross'), false, '不可玩格不是合法目标');
+
+  /* 9i. 绝处逢生：灵力够才提供，次数有上限 */
+  eq(SK.lastStandOffer(LS.cost - 1, 0), null, '灵力不够时不提供绝处逢生');
+  const lso = SK.lastStandOffer(LS.cost, 0);
+  ok(lso && lso.cost === LS.cost && lso.moves === LS.moves, '绝处逢生换步数正确');
+  eq(SK.lastStandOffer(QI.MAX, LS.max), null, '达到次数上限后不再提供（防连锁循环）');
+
+  /* 9j. 技能回合不消耗步数：Game 侧只扣灵力，movesLeft 由 attemptSwap 独占 */
+  const gsrc = require('fs').readFileSync(path.join(__dirname, '..', 'js', 'game.js'), 'utf8');
+  ok(gsrc.indexOf('castSkill') >= 0 && gsrc.indexOf('this.movesLeft--') >= 0,
+    'Game 里扣步数只出现在 attemptSwap 一处');
+  eq((gsrc.match(/this\.movesLeft--/g) || []).length, 1, '扣步数只发生一次（技能一律不吃步数）');
+
+  /* 9k. 技能资产与文案齐全（图标 + 音效 + 中英文案） */
+  const imgKeys = LL.Assets.IMAGE_LIST || [];
+  const sfxKeys = LL.Assets.SFX_LIST || [];
+  const zhDict = (LL.LANG && LL.LANG.zh) || {};
+  const enDict = (LL.LANG && LL.LANG.en) || {};
+  const missAssets = [];
+  order.forEach(function (id) {
+    const d = SK.def(id);
+    if (imgKeys.indexOf(d.icon) < 0) missAssets.push('图标 ' + d.icon);
+    if (sfxKeys.indexOf('skill_' + id) < 0) missAssets.push('音效 skill_' + id);
+    if (!zhDict['skill_' + id]) missAssets.push('中文案 skill_' + id);
+    if (!enDict['skill_' + id]) missAssets.push('英文案 skill_' + id);
+  });
+  ['skillAimHint', 'skillBadTarget', 'skillNoQi', 'skillPickColor', 'qi', 'skillOverflow',
+    'lastStandTitle', 'lastStandMsg', 'lastStandYes', 'lastStandCost'].forEach(function (k) {
+      if (!zhDict[k]) missAssets.push('中文案 ' + k);
+      if (!enDict[k]) missAssets.push('英文案 ' + k);
+    });
+  eq(missAssets.length, 0, '技能资产与文案齐全' + (missAssets.length ? '：' + missAssets.join(' | ') : ''));
+
+  /* 9l. 技能图标文件真的存在（生成脚本跑过） */
+  const imgDir = path.join(__dirname, '..', 'assets', 'img');
+  const missFile = order.filter(function (id) {
+    return !require('fs').existsSync(path.join(imgDir, SK.def(id).icon + '.svg'));
+  });
+  eq(missFile.length, 0, '技能图标文件已生成' + (missFile.length ? '：' + missFile.join(' | ') : ''));
 }
 
 /* ---------- 汇总 ---------- */

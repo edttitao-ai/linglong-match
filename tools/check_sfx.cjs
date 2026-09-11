@@ -97,7 +97,9 @@ function estimateFreq(sig, sr) {
 const EXPECT = {
   match1: -6, match2: -6, match3: -6, match4: -6, match5: -6, match6: -6, match7: -6,
   win: -3, taiji: -3, thunder: -4, lose: -6, star: -6,
-  wind: -8, brk: -8, shuffle: -10, swap: -11, click: -13, invalid: -14
+  wind: -8, brk: -8, shuffle: -10, swap: -11, click: -13, invalid: -14,
+  /* 局内技能：重量排序——移山最重、如意锤次之、换天第三、灵犀一点最轻 */
+  skill_cross: -3, skill_hammer: -5, skill_color: -7, skill_swap: -8
 };
 
 const files = fs.readdirSync(SFX_DIR).filter(function (f) { return f.endsWith('.wav'); }).sort();

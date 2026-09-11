@@ -28,6 +28,10 @@
     ui_boost_moves: 'ui_boost_moves.svg',
     ui_boost_wind: 'ui_boost_wind.svg',
     ui_boost_shuffle: 'ui_boost_shuffle.svg',
+    ui_skill_hammer: 'ui_skill_hammer.svg',
+    ui_skill_swap: 'ui_skill_swap.svg',
+    ui_skill_color: 'ui_skill_color.svg',
+    ui_skill_cross: 'ui_skill_cross.svg',
     ui_pause: 'ui_pause.svg',
     ui_sound: 'ui_sound.svg',
     ui_mute: 'ui_mute.svg',
@@ -60,7 +64,12 @@
     lose: 'lose.wav',
     click: 'click.wav',
     star: 'star.wav',
-    invalid: 'invalid.wav'
+    invalid: 'invalid.wav',
+    /* 局内技能：四个技能各有一条起手音，听感要明显区别于普通消除 */
+    skill_hammer: 'skill_hammer.wav',
+    skill_swap: 'skill_swap.wav',
+    skill_color: 'skill_color.wav',
+    skill_cross: 'skill_cross.wav'
   };
 
   const A = {

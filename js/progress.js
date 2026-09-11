@@ -15,7 +15,7 @@
     quests: { day: '', list: [], progress: [], claimed: [], rerolls: 0, bonusClaimed: false },
     endless: { bestStage: 0, bestScore: 0, weekKey: '', weekBest: 0, runs: 0 },
     timed: { best: 0, runs: 0 },
-    stats: { maxCascade: 0, specialsFired: 0, obstaclesBroken: 0, revives: 0 },
+    stats: { maxCascade: 0, specialsFired: 0, obstaclesBroken: 0, revives: 0, skillsUsed: 0, lastStands: 0 },
     achievements: {},
     boosters: { moves: 0, wind: 0, shuffle: 0 },
     armed: { moves: false, wind: false, shuffle: false }

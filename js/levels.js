@@ -8,12 +8,19 @@
  *                { type:'clear' }                          清除全部障碍（总数由 layout 推出）
  *   stars        [二星分, 三星分]；一星 = 过关
  *   layout       8 行 × 8 列：'.' 空 · '*' 霜 · '#' 石锁 · 'v' 藤蔓
+ *   skills       可选，覆写本关的灵力起步值 / 倍率（见 README「局内技能」）
  *
  * 数值由 tools/balance.cjs 模拟验证后微调，保证「有挑战但可完成」。
+ * skills 只加在模拟胜率明显偏低的关卡上：那是玩家流失的地方，灵力的边际价值最高。
  */
 (function (global) {
   'use strict';
   const LL = (global.LL = global.LL || {});
+
+  /* 偏难关卡的灵力加成：多给 15 点（约半次技能机会）。
+   * 只动「新系统给多少」，不动 moves / objectives / stars 这些已校准的难度参数，
+   * 所以既有的关卡数值验证依然成立。 */
+  const BOOST_QI = { skills: { qiStart: 45 } };
 
   /* 常用障碍布局 */
   const LAYOUTS = {
@@ -143,20 +150,20 @@
     { id: 16, name: '霜重露寒', nameEn: 'Heavy Frost',   colors: 5, moves: 20, objectives: [{ type: 'clear' }], stars: [2880, 3800, 5300], layout: LAYOUTS.frostBlock },
     { id: 17, name: '寒玉生烟', nameEn: 'Cold Jade',     colors: 5, moves: 20, objectives: [{ type: 'score', target: 6400 }, { type: 'clear' }], stars: [6770, 7100, 7700], layout: LAYOUTS.frostCross },
     { id: 18, name: '石锁重重', nameEn: 'Stone Locks',   colors: 5, moves: 19, objectives: [{ type: 'clear' }], stars: [2925, 4100, 5800], layout: LAYOUTS.stoneRow },
-    { id: 19, name: '四角磐石', nameEn: 'Cornerstones',  colors: 5, moves: 26, objectives: [{ type: 'clear' }], stars: [6420, 8100, 11600], layout: LAYOUTS.stoneCorners },
+    { id: 19, name: '四角磐石', nameEn: 'Cornerstones',  colors: 5, moves: 26, objectives: [{ type: 'clear' }], stars: [6420, 8100, 11600], layout: LAYOUTS.stoneCorners, ...BOOST_QI },
     { id: 20, name: '石上生花', nameEn: 'Flowers on Stone', colors: 5, moves: 20, objectives: [{ type: 'collect', color: 4, count: 20 }, { type: 'clear' }], stars: [3595, 4800, 6300], layout: LAYOUTS.stoneRow },
     { id: 21, name: '藤蔓缠绕', nameEn: 'Vine Tangle',   colors: 5, moves: 20, objectives: [{ type: 'clear' }], stars: [3680, 5300, 7400], layout: LAYOUTS.vineBand },
     { id: 22, name: '藤影环廊', nameEn: 'Vine Corridor', colors: 5, moves: 22, objectives: [{ type: 'clear' }], stars: [4645, 6100, 8200], layout: LAYOUTS.vineRing },
 
     /* ---- 第四章 · 混合与收官（6 色，步数收紧） ---- */
-    { id: 23, name: '六合同风', nameEn: 'Six Harmonies', colors: 6, moves: 20, objectives: [{ type: 'score', target: 4600 }], stars: [4775, 5200, 5800] },
+    { id: 23, name: '六合同风', nameEn: 'Six Harmonies', colors: 6, moves: 20, objectives: [{ type: 'score', target: 4600 }], stars: [4775, 5200, 5800], ...BOOST_QI },
     { id: 24, name: '双色争艳', nameEn: 'Duelling Hues', colors: 6, moves: 19, objectives: [{ type: 'collect', color: 0, count: 16 }, { type: 'collect', color: 3, count: 16 }], stars: [2485, 3200, 4200] },
-    { id: 25, name: '霜石交加', nameEn: 'Frost and Stone', colors: 6, moves: 23, objectives: [{ type: 'clear' }], stars: [3085, 4300, 5300], layout: LAYOUTS.mixedA },
+    { id: 25, name: '霜石交加', nameEn: 'Frost and Stone', colors: 6, moves: 23, objectives: [{ type: 'clear' }], stars: [3085, 4300, 5300], layout: LAYOUTS.mixedA, ...BOOST_QI },
     { id: 26, name: '三花聚顶', nameEn: 'Three Blossoms', colors: 6, moves: 19, objectives: [{ type: 'collect', color: 1, count: 14 }, { type: 'collect', color: 4, count: 14 }, { type: 'collect', color: 5, count: 14 }], stars: [2690, 3400, 4300] },
-    { id: 27, name: '金石为开', nameEn: 'Iron Will',     colors: 6, moves: 24, objectives: [{ type: 'score', target: 4200 }, { type: 'clear' }], stars: [4530, 5200, 6200], layout: LAYOUTS.mixedB },
-    { id: 28, name: '拨云见日', nameEn: 'Clouds Part',   colors: 6, moves: 22, objectives: [{ type: 'clear' }], stars: [2945, 3800, 5000], layout: LAYOUTS.mixedC },
-    { id: 29, name: '玲珑百转', nameEn: 'Kaleidoscope',  colors: 6, moves: 21, objectives: [{ type: 'collect', color: 2, count: 10 }, { type: 'clear' }], stars: [2960, 3800, 4800], layout: LAYOUTS.vineBand },
-    { id: 30, name: '玲珑归元', nameEn: 'Linglong Complete', colors: 6, moves: 24, objectives: [{ type: 'score', target: 4600 }, { type: 'clear' }], stars: [4940, 5600, 6800], layout: LAYOUTS.finale }
+    { id: 27, name: '金石为开', nameEn: 'Iron Will',     colors: 6, moves: 24, objectives: [{ type: 'score', target: 4200 }, { type: 'clear' }], stars: [4530, 5200, 6200], layout: LAYOUTS.mixedB, ...BOOST_QI },
+    { id: 28, name: '拨云见日', nameEn: 'Clouds Part',   colors: 6, moves: 22, objectives: [{ type: 'clear' }], stars: [2945, 3800, 5000], layout: LAYOUTS.mixedC, ...BOOST_QI },
+    { id: 29, name: '玲珑百转', nameEn: 'Kaleidoscope',  colors: 6, moves: 21, objectives: [{ type: 'collect', color: 2, count: 10 }, { type: 'clear' }], stars: [2960, 3800, 4800], layout: LAYOUTS.vineBand, ...BOOST_QI },
+    { id: 30, name: '玲珑归元', nameEn: 'Linglong Complete', colors: 6, moves: 24, objectives: [{ type: 'score', target: 4600 }, { type: 'clear' }], stars: [4940, 5600, 6800], layout: LAYOUTS.finale, ...BOOST_QI }
   ];
 
   /* 清障关的障碍总数 */

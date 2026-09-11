@@ -372,6 +372,57 @@ function iconBoost(kind) {
 `;
 }
 
+/* 局内技能图标：如意锤 · 换天（双向交换）· 灵犀一点（点色）· 移山（十字爆破）
+ * 与开局道具同理走 24×24 紧凑视图框；四个技能各有独立轮廓，缩小到 26px 也能分辨。 */
+function iconSkill(kind) {
+  if (kind === 'hammer') {
+    return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <g transform="rotate(-38 12 12)">
+    <rect x="7.2" y="2.4" width="9.6" height="6.8" rx="2.2" fill="${INK}"/>
+    <rect x="7.2" y="2.4" width="9.6" height="2.4" rx="1.2" fill="${GOLD}" opacity="0.85"/>
+    <rect x="9.8" y="8.8" width="4.4" height="12.4" rx="2.2" fill="${GOLD}" stroke="#8A5F18" stroke-width="0.9"/>
+  </g>
+  <g stroke="${CINNABAR}" stroke-width="1.5" stroke-linecap="round">
+    <path d="M19.4 5.4 l2.1 -2.1"/>
+    <path d="M20.4 9.6 h2.2"/>
+    <path d="M15.2 3.6 v-2.2"/>
+  </g>
+</svg>
+`;
+  }
+  if (kind === 'swap') {
+    return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M3.6 8.6 h11.8" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M11.8 4.4 L16.6 8.6 L11.8 12.8" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20.4 15.4 H8.6" fill="none" stroke="${CINNABAR}" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M12.2 11.2 L7.4 15.4 L12.2 19.6" fill="none" stroke="${CINNABAR}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+  }
+  if (kind === 'color') {
+    return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M12 2.4 c3.7 4.3 6.1 7.4 6.1 10.4 a6.1 6.1 0 0 1 -12.2 0 c0 -3 2.4 -6.1 6.1 -10.4 z"
+        fill="none" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>
+  <circle cx="12" cy="13.2" r="2.7" fill="${CINNABAR}"/>
+  <circle cx="3.4" cy="6.2" r="1.7" fill="#2FA98C"/>
+  <circle cx="20.6" cy="6.2" r="1.7" fill="#4A6FB5"/>
+  <circle cx="3.4" cy="19.8" r="1.7" fill="#D9A63C"/>
+  <circle cx="20.6" cy="19.8" r="1.7" fill="#8A5FB0"/>
+</svg>
+`;
+  }
+  return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M9.9 2.8 h4.2 v7.1 h7.1 v4.2 h-7.1 v7.1 h-4.2 v-7.1 h-7.1 v-4.2 h7.1 z"
+        fill="${CINNABAR}" stroke="#8E231D" stroke-width="1"/>
+  <circle cx="12" cy="12" r="2.7" fill="${GOLD}" stroke="#8A5F18" stroke-width="0.9"/>
+  <g stroke="${GOLD}" stroke-width="1.4" stroke-linecap="round" opacity="0.9">
+    <path d="M12 0.9 v1.5"/><path d="M12 21.6 v1.5"/>
+    <path d="M0.9 12 h1.5"/><path d="M21.6 12 h1.5"/>
+  </g>
+</svg>
+`;
+}
+
 function iconBack() {
   return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
   <path d="M14.4 4.2 L6.2 12 L14.4 19.8" fill="none" stroke="${INK}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -575,6 +626,10 @@ const files = {
   'ui_boost_moves.svg': iconBoost('moves'),
   'ui_boost_wind.svg': iconBoost('wind'),
   'ui_boost_shuffle.svg': iconBoost('shuffle'),
+  'ui_skill_hammer.svg': iconSkill('hammer'),
+  'ui_skill_swap.svg': iconSkill('swap'),
+  'ui_skill_color.svg': iconSkill('color'),
+  'ui_skill_cross.svg': iconSkill('cross'),
   'ui_pause.svg': iconPause(),
   'ui_sound.svg': iconSound(false),
   'ui_mute.svg': iconSound(true),

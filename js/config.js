@@ -107,6 +107,37 @@
       shuffle: { cost: 60, icon: 'ui_boost_shuffle' }
     },
 
+    /* 局内技能「灵力」：**只能玩出来，不能买**——守住上面那条铁律。
+     * 一关（18 步、约 130 格）预期总收入 150 上下 ≈ 3~5 次技能：
+     * 够救急，又不足以让关卡设计失去意义（见 README「局内技能」）。 */
+    QI: {
+      MAX: 120,             // 灵力上限：存得住一次大招，存不住四个
+      START: 30,            // 开局赠送：人人一进场就能放一次技能（首次体验不花钱）
+      PER_TILE: 1,          // 每消除一块
+      PER_CASCADE: 6,       // 连锁每多一层（第 2 层起）
+      PER_OBSTACLE: 6,      // 每破一个障碍
+      PER_FIRE: 5,          // 每引爆一个特殊块
+      PER_COMBO: 15,        // 每触发一次特殊块组合
+      OVERFLOW_SCORE: 2,    // 满槽后每点灵力折算的分数（避免「不敢花就浪费」）
+      LAST_STAND_AT: 3,     // 剩余步数 ≤ 此值进入背水一战
+      LAST_STAND_MULT: 2    // 背水一战期间灵力获取倍率：把绝境变成高潮
+    },
+
+    /* 四个局内技能：一律**不消耗步数**，代价只有灵力
+     * aim：none 直接放 · cell 选一格 · color 选一格再选色
+     * swap（换天）在盘面已无解时免费——不让你因为没灵力而卡死 */
+    SKILLS: {
+      order: ['hammer', 'swap', 'color', 'cross'],
+      hammer: { cost: 30, aim: 'cell',  icon: 'ui_skill_hammer', cause: 'skill_hammer' },
+      swap:   { cost: 25, aim: 'none',  icon: 'ui_skill_swap',   cause: 'skill_swap', freeWhenStuck: true },
+      color:  { cost: 45, aim: 'color', icon: 'ui_skill_color',  cause: 'skill_color' },
+      cross:  { cost: 60, aim: 'cell',  icon: 'ui_skill_cross',  cause: 'skill_cross' }
+    },
+
+    /* 绝处逢生：步数耗尽且目标未完成时，花灵力换步数——不走金币，不破铁律。
+     * max 防极端连锁下的循环；灵力不够时才轮到金币续步那条路。 */
+    LAST_STAND: { cost: 60, moves: 3, max: 2 },
+
     /* 每日任务：3 条，易/中/难各一；三条合计应在 15~25 分钟内可清完 */
     QUESTS: {
       count: 3,

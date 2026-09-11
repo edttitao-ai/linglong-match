@@ -40,6 +40,7 @@
     <div class="hud-foot">
       <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
       <div class="keys">
+        <span><b>1~4</b> <i data-i18n="keySkill">技能</i></span>
         <span><b>Esc</b> <i data-i18n="keyPause">暂停</i></span>
         <span><b>M</b> <i data-i18n="keyMute">静音</i></span>
         <span><b>R</b> <i data-i18n="keyRetry">重玩</i></span>
@@ -54,6 +55,16 @@
     <div id="banner" class="banner">
       <div id="bannerMain" class="banner-main"></div>
       <div id="bannerSub" class="banner-sub"></div>
+    </div>
+    <!-- 局内技能（灵力）：棋盘下方悬浮条，瞄准时在棋盘上高亮目标 -->
+    <div id="skillBar" class="skill-bar hidden">
+      <div class="qi-wrap">
+        <div class="qi-bar"><i id="qiFill"></i></div>
+        <div class="qi-num"><span class="qi-label" data-i18n="qi">灵力</span><b id="qiValue">0</b><i id="qiGain"></i></div>
+      </div>
+      <div class="skill-slots" id="skillSlots"></div>
+      <div class="color-ring hidden" id="colorRing"></div>
+      <div class="skill-note hidden" id="skillNote"></div>
     </div>
   </main>
 
@@ -296,6 +307,20 @@
     </div>
   </div>
 
+  <!-- 绝处逢生（步数耗尽时用灵力换步） -->
+  <div id="lastStand" class="overlay hidden">
+    <div class="panel revive-panel">
+      <h2 data-i18n="lastStandTitle">绝处逢生</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <p class="revive-msg" id="lastStandMsg"></p>
+      <div class="revive-cost" id="lastStandCost"></div>
+      <div class="btn-col">
+        <button id="btnLastStandYes" class="primary"></button>
+        <button id="btnLastStandNo" class="ghost" data-i18n="lastStandNo">算了，认输</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 确认框 -->
   <div id="confirm" class="overlay hidden">
     <div class="panel small">
@@ -319,6 +344,7 @@
 <script src="js/board.js"></script>
 <script src="js/special.js"></script>
 <script src="js/resolver.js"></script>
+<script src="js/skills.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/daily.js"></script>
 <script src="js/quests.js"></script>

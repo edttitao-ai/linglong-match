@@ -35,16 +35,10 @@
         self.dragFrom = cell;
         self.dragHandled = false;
         Game.setHover(cell);
-        const sel = Game.selected;
-        if (sel && sel.r === cell.r && sel.c === cell.c) {
-          Game.setSelected(null);
-          self.dragHandled = true;
-        } else if (sel && (Math.abs(sel.r - cell.r) + Math.abs(sel.c - cell.c) === 1)) {
-          Game.attemptSwap(sel, cell);
+        /* 选格/交换/放技能的分支判断统一由 Game.tapCell 决定（技能瞄准态优先） */
+        if (Game.tapCell(cell)) {
           self.dragHandled = true;
           self.down = false;
-        } else {
-          Game.setSelected(cell);
         }
       }, { passive: false });
 
@@ -59,8 +53,7 @@
         if (!self.dragHandled && self.dragFrom && cell) {
           const d = Math.abs(cell.r - self.dragFrom.r) + Math.abs(cell.c - self.dragFrom.c);
           if (d === 1) {
-            Game.setSelected(null);
-            Game.attemptSwap(self.dragFrom, cell);
+            Game.dragTo(self.dragFrom, cell);
             self.dragHandled = true;
           } else if (d > 1) {
             self.dragHandled = true;   /* 拖过头：本次手势作废 */
@@ -81,8 +74,15 @@
       U.on(global, 'keydown', function (e) {
         const Game = LL.Game;
         const k = e.key ? e.key.toLowerCase() : '';
+        /* 数字键 1~4 = 依次释放技能（与技能栏顺序一致） */
+        if (k >= '1' && k <= '4' && LL.CFG.SKILLS.order[+k - 1]) {
+          if (Game.state === 'playing') { Game.useSkill(LL.CFG.SKILLS.order[+k - 1]); e.preventDefault(); }
+          return;
+        }
         if (k === 'escape' || k === 'p') {
-          if (Game.state === 'playing' || Game.state === 'paused') LL.UI.togglePause();
+          /* 瞄准态下 Esc 先取消技能，再才是暂停 */
+          if (Game.aim) Game.cancelAim();
+          else if (Game.state === 'playing' || Game.state === 'paused') LL.UI.togglePause();
         } else if (k === 'm') {
           LL.UI.toggleMute();
         } else if (k === 'r' && (Game.state === 'playing' || Game.state === 'paused')) {

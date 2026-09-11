@@ -6,6 +6,7 @@
   const U = LL.U;
   const B = LL.Board;
   const R = LL.Resolver;
+  const SK = LL.Skills;
   const S = CFG.SPECIAL;
   const O = CFG.OBST;
   const I18N = LL.I18N;
@@ -104,6 +105,15 @@
       this.lastResult = null;
       this.pendingRevive = null;
       this.reviveUsed = 0;          /* 本次挑战内的续步次数（每次开始关卡重置） */
+
+      /* 灵力：只能玩出来的局内力量（见 skills.js 与 README「局内技能」） */
+      this.qi = SK.qiStartFor(level);
+      this.qiScale = SK.qiScaleFor(level);
+      this.aim = null;              /* 瞄准态：{ id, cost, stage:'cell'|'color', cell } */
+      this.skillsUsed = 0;
+      this.lastStandUsed = 0;
+      this.pendingLastStand = null;
+
       this.endless = !!level.endless;
       this.timed = !!level.timed;
       this.endlessStage = level.stage || this.endlessStage || 1;
@@ -114,6 +124,7 @@
       LL.HUD.setScore(0);
       LL.HUD.setMoves(this.movesLeft);
       LL.HUD.updateObjectives(this.progressList());
+      LL.UI.buildSkillBar();
       this.state = 'intro';
       this.introT = 1500;
       LL.HUD.banner(
@@ -156,6 +167,7 @@
         selected: this.selected,
         hover: this.hover,
         hint: this.hint,
+        aim: this.aim,
         state: this.state
       };
     },
@@ -216,6 +228,189 @@
       return true;
     },
 
+    /* 点击路由：瞄准态走技能，其余走原有的「选格 → 相邻交换」。
+     * 返回 true 表示这次点击已被消化（拖动不必再接管）。 */
+    tapCell(cell) {
+      this.notifyInput();
+      if (!this.canInput()) return true;
+      if (this.aim) { this.aimTap(cell); return true; }
+      if (!cell) { this.selected = null; return true; }
+      const sel = this.selected;
+      if (sel && sel.r === cell.r && sel.c === cell.c) { this.selected = null; return true; }
+      if (sel && Math.abs(sel.r - cell.r) + Math.abs(sel.c - cell.c) === 1) {
+        this.attemptSwap(sel, cell);
+        return true;
+      }
+      this.setSelected(cell);
+      return false;   /* 只是选中：允许继续拖成一格交换 */
+    },
+
+    /* 拖动路由：瞄准态一律不响应拖动，避免放技能时误触交换 */
+    dragTo(from, cell) {
+      if (this.aim || !this.canInput() || !from || !cell) return false;
+      if (Math.abs(from.r - cell.r) + Math.abs(from.c - cell.c) !== 1) return false;
+      this.selected = null;
+      return this.attemptSwap(from, cell);
+    },
+
+    /* ---------------- 局内技能（灵力） ----------------
+     * 四个技能都不消耗步数，代价只有灵力；灵力只能靠玩出来（见 skills.js）。
+     * 释放后走的是 Resolver 的正常回合流水线，所以连锁、计分、任务统计全都自动生效。 */
+
+    useSkill(id) {
+      if (!this.canInput()) return false;
+      const d = SK.def(id);
+      if (!d) return false;
+      const c = SK.canUse(this.board, this.qi, id);
+      if (!c.ok) {
+        LL.Audio.play('invalid');
+        if (c.reason === 'qi') {
+          LL.UI.skillNote(I18N.t('skillNoQi', { n: Math.ceil(c.cost - this.qi) }));
+        }
+        return false;
+      }
+      if (d.aim === 'none') { this.castSkill(id, null, -1, c.cost); return true; }
+      /* 再次点击同一个技能 = 取消瞄准 */
+      if (this.aim && this.aim.id === id) { this.cancelAim(); return true; }
+      this.aim = { id: id, cost: c.cost, stage: 'cell', cell: null };
+      this.selected = null;
+      LL.Audio.play('click', { rate: 1.1 });
+      LL.UI.skillNote(I18N.t('skillAimHint'));
+      LL.UI.buildSkillBar();
+      return true;
+    },
+
+    cancelAim() {
+      if (!this.aim) return false;
+      this.aim = null;
+      LL.Audio.play('click', { rate: 0.9 });
+      LL.UI.buildSkillBar();
+      return true;
+    },
+
+    /* 瞄准态里点棋盘：先选格，灵犀一点再补一步选色 */
+    aimTap(cell) {
+      const aim = this.aim;
+      if (!aim || !cell) return;
+      if (!SK.validTarget(this.board, cell, aim.id)) {
+        LL.Audio.play('invalid');
+        LL.UI.skillNote(I18N.t('skillBadTarget'));
+        return;
+      }
+      if (aim.id === 'color') {
+        aim.cell = { r: cell.r, c: cell.c };
+        aim.stage = 'color';
+        LL.Audio.play('click', { rate: 1.16 });
+        LL.UI.buildSkillBar();
+        return;
+      }
+      this.castSkill(aim.id, cell, -1, aim.cost);
+    },
+
+    /* 真正释放：扣灵力 → 出特效 → 把计划交给 Resolver 走完整回合 */
+    castSkill(id, cell, color, cost) {
+      if (this.state !== 'playing') return false;
+      if (cost > this.qi) { LL.Audio.play('invalid'); return false; }
+      const plan = id === 'color' ? null : SK.plan(this.board, id, cell);
+      if (id === 'color' && !SK.recolor(this.board, cell, color)) {
+        LL.Audio.play('invalid');
+        return false;
+      }
+      this.qi -= cost;
+      this.aim = null;
+      this.skillsUsed++;
+      LL.Progress.bumpStat('skillsUsed', 1);
+      LL.Audio.play('skill_' + id, { vol: 0.95 });
+      this.skillFx(id, cell, color);
+      LL.UI.buildSkillBar();
+
+      this.selected = null;
+      this.hint = null;
+      this.idleT = 0;
+      this.state = 'resolving';
+      if (plan) R.beginSkill(this.rs, plan);
+      else R.beginScan(this.rs);      /* 灵犀一点：改完色让正常匹配扫描接着跑 */
+      this.next();
+      return true;
+    },
+
+    /* 每一次消除都涨灵力；满槽后溢出折算成分数（避免「不敢花就浪费」） */
+    addQi(ev) {
+      const mult = SK.gainMult(this.movesLeft, this.timed) * (this.qiScale || 1);
+      const amount = SK.gain(ev, mult);
+      if (amount <= 0) return;
+      const res = SK.addQi(this.qi, amount);
+      this.qi = res.qi;
+      if (res.score > 0) this.score += res.score;
+      LL.UI.updateQi(res.gained, res.score);
+    },
+
+    /* 技能起手特效：技能要有分量，所以起手就是大动静 */
+    skillFx(id, cell, color) {
+      const Anim = LL.Anim, Render = LL.Render;
+      const p = cell
+        ? Render.cellXY(cell.r, cell.c)
+        : { x: Render.W / 2, y: Render.geom.by + Render.geom.board / 2 };
+      const cx = Render.W / 2, cy = Render.geom.by + Render.geom.board * 0.42;
+
+      if (id === 'hammer') {
+        Anim.burst(p.x, p.y, { count: 16, colors: ['#fff3c4', '#ffd27a', '#ffffff'], shape: 'spark', speedMax: 360 });
+        Anim.burst(p.x, p.y, { count: 8, colors: ['#ffffff', '#d8e6ee'], shape: 'shard', speedMax: 210 });
+        Anim.addShake(0.45);
+        Anim.addFlash(0.2);
+      } else if (id === 'cross') {
+        Anim.lineFx({ x: Render.geom.bx, y: p.y },
+          { x: Render.geom.bx + Render.geom.board, y: p.y }, { color: 'rgba(255,242,206,0.95)', width: 20 });
+        Anim.lineFx({ x: p.x, y: Render.geom.by },
+          { x: p.x, y: Render.geom.by + Render.geom.board }, { color: 'rgba(255,242,206,0.95)', width: 20 });
+        Anim.burst(p.x, p.y, { count: 22, colors: ['#fff3c4', '#ffb45e', '#ffffff'], shape: 'spark', speedMax: 430 });
+        Anim.addShake(0.72);
+        Anim.addFlash(0.34);
+      } else if (id === 'color') {
+        const info = CFG.TILE_INFO[color] || CFG.TILE_INFO[0];
+        Anim.burst(p.x, p.y, { count: 14, colors: [info.light, info.main, '#ffffff'], shape: 'ring', speedMax: 90 });
+        Anim.burst(p.x, p.y, { count: 16, colors: [info.light, '#ffffff'], shape: 'spark', speedMax: 300 });
+        Anim.addShake(0.18);
+        Anim.addFlash(0.14);
+      } else if (id === 'swap') {
+        Anim.burst(cx, cy, { count: 24, colors: ['#fff3c4', '#9fd8ff', '#ffffff'], shape: 'spark', speedMax: 380 });
+        Anim.burst(cx, cy, { count: 10, colors: ['#ffffff', '#e8dcff'], shape: 'ring', speedMax: 120 });
+        Anim.addShake(0.42);
+        Anim.addFlash(0.22);
+      }
+      Anim.text(cx, cy - 30, I18N.t('skill_' + id), { size: 34, color: '#8a3a1c', life: 980, stroke: '#fff8e6' });
+    },
+
+    /* ---------------- 绝处逢生 ----------------
+     * 步数耗尽且目标未完成时，先给一次「花灵力换步」的机会（不走金币、不破铁律），
+     * 灵力不够才轮到金币续步那条路——把「要输了」改写成「花掉攒的大招」。 */
+
+    useLastStand() {
+      const o = this.pendingLastStand;
+      if (!o) return false;
+      this.pendingLastStand = null;
+      this.qi -= o.cost;
+      this.lastStandUsed = (this.lastStandUsed || 0) + 1;
+      this.movesLeft += o.moves;
+      LL.Progress.bumpStat('lastStands', 1);
+      LL.UI.hideLastStand();
+      LL.HUD.setMoves(this.movesLeft);
+      this.state = 'playing';
+      LL.Audio.play('star', { rate: 1.02, vol: 0.95 });
+      LL.Anim.addFlash(0.26);
+      LL.HUD.banner(I18N.t('lastStandTitle'), '+' + o.moves + ' ' + I18N.t('moves'), 1500);
+      LL.UI.buildSkillBar();
+      this.notifyInput();
+      return true;
+    },
+
+    declineLastStand() {
+      this.pendingLastStand = null;
+      LL.UI.hideLastStand();
+      if (this.endless) this.runOver();
+      else this.lose();
+    },
+
     /* ---------------- 回合驱动 ---------------- */
 
     next() {
@@ -260,6 +455,7 @@
       LL.Progress.bumpStat('specialsFired', qev.specialsFired);
       LL.Progress.bumpStat('obstaclesBroken', qev.obstaclesBroken);
       LL.Progress.setStatMax('maxCascade', ev.cascade || 0);
+      this.addQi(ev);
     },
 
     /* 开局道具的横幅提示文案 */
@@ -383,6 +579,14 @@
         if (this.endless) this.endlessAdvance();
         else this.win();
       } else if (this.movesLeft <= 0) {
+        /* 绝处逢生：先给一次「花灵力换步」的机会，灵力不够才走金币续步 / 结算 */
+        const offer = SK.lastStandOffer(this.qi, this.lastStandUsed);
+        if (offer) {
+          this.pendingLastStand = offer;
+          this.state = 'laststand';
+          LL.UI.showLastStand(offer, this.progressRatio());
+          return;
+        }
         if (this.endless) this.runOver();
         else this.lose();
       } else {
@@ -646,7 +850,7 @@
 
       if (this.state === 'playing') {
         this.idleT += dt;
-        if (!this.hint && this.idleT > CFG.HINT_DELAY) {
+        if (!this.hint && !this.aim && this.idleT > CFG.HINT_DELAY) {
           const moves = B.findAllMoves(this.board, 1);
           if (moves.length) this.hint = { a: moves[0].a, b: moves[0].b };
         }

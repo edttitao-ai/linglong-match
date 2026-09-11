@@ -468,6 +468,75 @@ def sfx_lose():
     return to_stereo(out, rt60=0.7, wet=0.14, spread=19, peak_db=-6.0)
 
 
+# ------------------------------------------------------------------ 局内技能（灵力）
+# 四个技能各有一条起手音，听感必须明显区别于普通消除：
+# 普通消除是清净的玉磬，技能是「有分量的一击」，所以都带冲击或风啸。
+
+def sfx_skill_hammer():
+    """如意锤：实心一击 —— 低频冲击 + 木梆 + 金属脆响，短促有力"""
+    out = zeros(0.62)
+    n = int(SR * 0.30)
+    thud = [0.0] * n
+    phase = 0.0
+    for i in range(n):
+        t = i / n
+        f = 96.0 * (1.0 - 0.46 * t)
+        phase += 2.0 * math.pi * f / SR
+        thud[i] = math.sin(phase) * math.exp(-i / (0.085 * SR))
+    mix_at(out, thud, 0.0, 1.0)
+    mix_at(out, wood_tick(420.0, 0.20, 0.030, lp=2200.0, click=0.34), 0.0, 0.55)
+    mix_at(out, bandpass_noise(0.12, 2200, 9000, 0.020), 0.0, 0.55)
+    mix_at(out, bell(1318.51, 0.34, tau=0.060, click=0.14), 0.008, 0.30)
+    out = to_peak(fade(out, 1.0, 55.0), -5.0)
+    return to_stereo(out, rt60=0.55, wet=0.16, peak_db=-5.0)
+
+
+def sfx_skill_cross():
+    """移山：整行整列裂开 —— 上行风啸 + 铜锣 + 双层低频冲击，四个技能里最重的一条"""
+    out = zeros(1.75)
+    # 风啸：三段带通噪声依次抬高中心频率并加重，听起来是往上冲的气流
+    for i, (lo, hi, at, g) in enumerate((
+            (500, 2600, 0.00, 0.34), (1100, 4800, 0.11, 0.46), (2200, 9000, 0.22, 0.58))):
+        mix_at(out, bandpass_noise(0.30, lo, hi, 0.055), at, g)
+    # 落点：铜锣 + 一层裂响
+    mix_at(out, bandpass_noise(0.24, 900, 6500, 0.042), 0.31, 0.85)
+    mix_at(out, gong(130.81, 1.50, tau=0.55, shimmer=0.62), 0.31, 0.90)
+    n = int(SR * 0.50)
+    thud = [0.0] * n
+    phase = 0.0
+    for i in range(n):
+        t = i / n
+        f = 84.0 * (1.0 - 0.50 * t)
+        phase += 2.0 * math.pi * f / SR
+        thud[i] = math.sin(phase) * math.exp(-i / (0.13 * SR))
+    mix_at(out, thud, 0.31, 1.0)
+    out = to_peak(fade(out, 1.5, 90.0), -3.0)
+    return to_stereo(out, rt60=1.30, wet=0.28, spread=29, peak_db=-3.0)
+
+
+def sfx_skill_color():
+    """灵犀一点：点石成色 —— 三音上行 + 高频闪片，轻盈通透不吓人"""
+    out = zeros(1.05)
+    for i, f in enumerate((1046.50, 1318.51, 1567.98)):
+        mix_at(out, bell(f, 0.55, tau=0.085 + 0.02 * i, bright=1.10 + 0.15 * i, click=0.18),
+               i * 0.055, 0.55 - 0.09 * i)
+    mix_at(out, bandpass_noise(0.42, 3500, 9500, 0.090), 0.10, 0.20)
+    out = to_peak(fade(out, 1.2, 60.0), -7.0)
+    return to_stereo(out, rt60=1.00, wet=0.26, spread=25, peak_db=-7.0)
+
+
+def sfx_skill_swap():
+    """换天：全盘搅动 —— 竹简摩擦成串逐张加快，末尾一声玉磬定位"""
+    out = zeros(1.00)
+    for i in range(11):
+        at = i * 0.048 + rng.uniform(-0.008, 0.008)
+        mix_at(out, bandpass_noise(0.06, 1400 + i * 260, 5200 + i * 320, 0.016), max(0.0, at), 0.34)
+        mix_at(out, wood_tick(rng.uniform(620, 1180) + i * 22, 0.05, 0.008, click=0.28), max(0.0, at), 0.26)
+    mix_at(out, bell(1760.0, 0.62, tau=0.100, click=0.16), 0.56, 0.42)
+    out = to_peak(fade(out, 1.5, 70.0), -8.0)
+    return to_stereo(out, rt60=0.70, wet=0.18, spread=21, peak_db=-8.0)
+
+
 # ------------------------------------------------------------------ 输出
 
 def write_wav(name, channels, peak_guard=-1.0):
@@ -509,6 +578,10 @@ def main():
         ('shuffle.wav', sfx_shuffle()),
         ('win.wav', sfx_win()),
         ('lose.wav', sfx_lose()),
+        ('skill_hammer.wav', sfx_skill_hammer()),
+        ('skill_cross.wav', sfx_skill_cross()),
+        ('skill_color.wav', sfx_skill_color()),
+        ('skill_swap.wav', sfx_skill_swap()),
     ]
     total = 0
     for name, chans in sounds:

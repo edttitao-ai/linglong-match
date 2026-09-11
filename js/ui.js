@@ -75,7 +75,18 @@
         scrollTitle: $('#scrollTitle'),
         scrollHint: $('#scrollHint'),
         achHead: $('#achHead'),
-        achList: $('#achList')
+        achList: $('#achList'),
+        skillBar: $('#skillBar'),
+        qiFill: $('#qiFill'),
+        qiValue: $('#qiValue'),
+        qiGain: $('#qiGain'),
+        skillSlots: $('#skillSlots'),
+        colorRing: $('#colorRing'),
+        skillNote: $('#skillNote'),
+        lastStand: $('#lastStand'),
+        lastStandMsg: $('#lastStandMsg'),
+        lastStandCost: $('#lastStandCost'),
+        btnLastStandYes: $('#btnLastStandYes')
       };
 
       /* 标题页 */
@@ -176,6 +187,17 @@
         LL.Game.declineRevive();
       });
 
+      /* 绝处逢生（灵力换步数） */
+      U.on($('#btnLastStandYes'), 'click', function () {
+        LL.Game.useLastStand();
+      });
+      U.on($('#btnLastStandNo'), 'click', function () {
+        LL.Audio.play('click');
+        LL.Game.declineLastStand();
+      });
+      /* 窄屏横竖屏切换时技能栏高度会变，棋盘保留区要跟着重算 */
+      U.on(global, 'resize', function () { self.syncBoardInset(); });
+
       /* 确认框 */
       U.on($('#btnConfirmYes'), 'click', function () {
         LL.Audio.play('click');
@@ -203,10 +225,12 @@
         U.show(this.els.pause, false);
         U.show(this.els.result, false);
         U.show(this.els.revive, false);
+        U.show(this.els.lastStand, false);
       }
       if (name !== 'game' && name !== 'settings') U.show(this.els.settings, false);
       U.show(this.els.hud, name === 'game');
-      if (name === 'game') LL.HUD.hideBanner();
+      U.show(this.els.skillBar, name === 'game');
+      if (name === 'game') { LL.HUD.hideBanner(); this.syncBoardInset(); }
       if (name === 'map') { this.buildMap(); this.buildBoostBar(); }
       if (name !== 'daily') U.show(this.els.daily, false);
       if (name !== 'checkin') U.show(this.els.checkin, false);
@@ -548,6 +572,145 @@
       clearTimeout(this._boostNoteTimer);
       this._boostNoteTimer = setTimeout(function () { U.show(el, false); }, 2200);
     },
+
+    /* ---------- 局内技能（灵力） ---------- */
+
+    /* 技能栏是 DOM、棋盘是画布：把栏高告诉渲染层，棋盘最后一行才不会被盖住 */
+    syncBoardInset() {
+      const bar = this.els.skillBar;
+      if (!bar) return;
+      LL.Render.setBottomInset(bar.offsetHeight + 16);
+    },
+
+    /* 可用/不可用是唯一需要重建 DOM 的变化，其余（灵力数字、进度条）原地更新即可 */
+    skillSig() {
+      const Game = LL.Game;
+      return LL.Skills.order().map(function (id) {
+        return LL.Skills.canUse(Game.board, Game.qi, id).ok ? '1' : '0';
+      }).join('');
+    },
+
+    buildSkillBar() {
+      const bar = this.els.skillBar;
+      if (!bar) return;
+      const Game = LL.Game;
+      const SK = LL.Skills;
+      const self = this;
+      const max = CFG.QI.MAX;
+      const qi = Game.qi || 0;
+
+      bar.classList.toggle('full', qi >= max);
+      if (this.els.qiFill) this.els.qiFill.style.width = Math.round(Math.min(1, qi / max) * 100) + '%';
+      if (this.els.qiValue) this.els.qiValue.textContent = String(Math.round(qi));
+
+      const slots = this.els.skillSlots;
+      if (slots) {
+        const aim = Game.aim;
+        slots.innerHTML = '';
+        SK.order().forEach(function (id) {
+          const info = SK.def(id);
+          const c = SK.canUse(Game.board, qi, id);
+          const btn = U.el('button',
+            'skill-slot' + (aim && aim.id === id ? ' armed' : (c.ok ? ' ready' : ' empty')));
+          btn.type = 'button';
+          btn.innerHTML =
+            '<img src="' + LL.Assets.path(info.icon) + '" alt="">' +
+            '<span class="s-cost">' + (c.cost === 0 ? I18N.t('skillFree') : c.cost) + '</span>';
+          btn.title = I18N.t('skill_' + id) + ' · ' + c.cost;
+          btn.addEventListener('click', function () { self.onSkillTap(id); });
+          slots.appendChild(btn);
+        });
+      }
+
+      /* 灵犀一点的第二步：选色环 */
+      const ring = this.els.colorRing;
+      if (ring) {
+        const picking = !!(Game.aim && Game.aim.stage === 'color');
+        U.show(ring, picking);
+        if (picking) this.buildColorRing();
+      }
+      this._skillSig = this.skillSig();
+      this.syncBoardInset();
+    },
+
+    /* 只列出本关实际存在的颜色——选了盘上没有的颜色等于白扔灵力 */
+    buildColorRing() {
+      const ring = this.els.colorRing;
+      if (!ring) return;
+      const self = this;
+      const n = (LL.Game.board && LL.Game.board.colors) || CFG.TILE_KINDS;
+      ring.innerHTML = '';
+      for (let t = 0; t < n; t++) {
+        const info = CFG.TILE_INFO[t];
+        const dot = U.el('button', 'color-dot');
+        dot.type = 'button';
+        dot.style.background = 'radial-gradient(circle at 34% 30%, ' + info.light + ', ' + info.main + ')';
+        dot.title = I18N.tileName(t);
+        dot.addEventListener('click', function () { self.pickColor(t); });
+        ring.appendChild(dot);
+      }
+    },
+
+    pickColor(t) {
+      const aim = LL.Game.aim;
+      if (!aim || aim.stage !== 'color' || !aim.cell) return;
+      LL.Game.castSkill('color', aim.cell, t, aim.cost);
+    },
+
+    onSkillTap(id) { LL.Game.useSkill(id); },
+
+    /* 灵力入账的轻量更新：每次消除都会走到这里，所以不重建 DOM */
+    updateQi(gained, overflowScore) {
+      const bar = this.els.skillBar;
+      if (!bar) return;
+      const Game = LL.Game;
+      const max = CFG.QI.MAX;
+      const qi = Game.qi || 0;
+      bar.classList.toggle('full', qi >= max);
+      if (this.els.qiFill) this.els.qiFill.style.width = Math.round(Math.min(1, qi / max) * 100) + '%';
+      if (this.els.qiValue) this.els.qiValue.textContent = String(Math.round(qi));
+
+      const g = this.els.qiGain;
+      if (g) {
+        g.textContent = overflowScore > 0
+          ? I18N.t('skillOverflow', { n: U.fmt(overflowScore) })
+          : '+' + gained;
+        g.classList.remove('pop');
+        void g.offsetWidth;              /* 强制回流以重启动画 */
+        g.classList.add('pop');
+      }
+      if (this.skillSig() !== this._skillSig) this.buildSkillBar();
+    },
+
+    skillNote(text) {
+      const el = this.els.skillNote;
+      if (!el || !text) return;
+      el.textContent = text;
+      U.show(el, true);
+      clearTimeout(this._skillNoteTimer);
+      this._skillNoteTimer = setTimeout(function () { U.show(el, false); }, 2200);
+    },
+
+    /* ---------- 绝处逢生 ---------- */
+
+    showLastStand(offer) {
+      const el = this.els.lastStand;
+      if (!el) return;
+      if (this.els.lastStandMsg) {
+        this.els.lastStandMsg.textContent = I18N.t('lastStandMsg', { n: offer.cost, m: offer.moves });
+      }
+      if (this.els.lastStandCost) {
+        this.els.lastStandCost.textContent = I18N.t('lastStandCost',
+          { n: offer.cost, m: Math.round((LL.Game.qi || 0) - offer.cost) });
+      }
+      if (this.els.btnLastStandYes) {
+        this.els.btnLastStandYes.textContent = I18N.t('lastStandYes', { n: offer.cost, m: offer.moves });
+      }
+      LL.Audio.play('star', { rate: 0.94, vol: 0.9 });
+      U.show(el, true);
+    },
+
+    hideLastStand() { U.show(this.els.lastStand, false); },
 
     /* ---------- 每日挑战 ---------- */
 

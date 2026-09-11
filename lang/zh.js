@@ -193,6 +193,27 @@
     reviveNo: '放弃本局',
     reviveNotEnough: '金币不足（还差 {n}）',
 
+    /* 局内技能（灵力） */
+    qi: '灵力',
+    qiFull: '灵力已满',
+    skill_hammer: '如意锤',
+    skill_swap: '换天',
+    skill_color: '灵犀一点',
+    skill_cross: '移山',
+    skillAimHint: '点棋盘选目标 · 再点技能取消',
+    skillPickColor: '选一个颜色',
+    skillBadTarget: '这一格不能作为目标',
+    skillNoQi: '灵力不足（还差 {n}）',
+    skillFreeStuck: '无路可走 · 免费',
+    skillFree: '免费',
+    skillOverflow: '灵力已满 · +{n} 分',
+    lastStandTitle: '绝处逢生',
+    lastStandCost: '消耗 {n} 灵力 · 释放后剩余 {m}',
+    lastStandMsg: '步数用尽，但你的灵力还没用完。用 {n} 灵力换 {m} 步，再冲一次？',
+    lastStandYes: '用 {n} 灵力换 {m} 步',
+    lastStandNo: '算了，认输',
+    keySkill: '技能',
+
     /* 设置 */
     volume: '音量',
     sound: '音效',

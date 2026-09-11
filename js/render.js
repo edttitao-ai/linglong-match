@@ -19,6 +19,7 @@
     ctx: null,
     dpr: 1,
     W: 0, H: 0,
+    bottomInset: 0,
     geom: { board: 0, cell: 0, bx: 0, by: 0 },
     time: 0,
     _fps: 0,
@@ -56,16 +57,28 @@
     },
 
     layout() {
-      /* 棋盘占较短边的 78%，四周留出装饰外框的位置 */
-      const avail = Math.min(this.W, this.H) * 0.78;
-      const board = Math.max(160, Math.floor(avail));
+      /* 棋盘占较短边的 78%，四周留出装饰外框的位置；
+       * 底部技能栏（bottomInset）会占掉一条，尺寸与居中都要避开它。
+       * inset 为 0 时与原公式完全一致。 */
+      const inset = this.bottomInset || 0;
+      const short = Math.min(this.W, Math.max(160, this.H - inset));
+      const board = Math.max(160, Math.floor(short * 0.78));
       const cell = board / CFG.COLS;
       this.geom = {
         board: cell * CFG.ROWS,
         cell: cell,
         bx: Math.round((this.W - cell * CFG.COLS) / 2),
-        by: Math.round((this.H - cell * CFG.ROWS) / 2)
+        by: Math.round(Math.max(2, (this.H - inset - cell * CFG.ROWS) / 2))
       };
+    },
+
+    /* 底部保留区（技能栏高度）：技能栏是 DOM，棋盘是画布，只有把高度告诉渲染层
+     * 才能保证最后一行不被盖住。值真的变了才重排，避免每帧抖动。 */
+    setBottomInset(px) {
+      const v = Math.max(0, Math.round(px || 0));
+      if (v === this.bottomInset) return;
+      this.bottomInset = v;
+      this.layout();
     },
 
     cellXY(r, c) {
@@ -521,6 +534,40 @@
         ctx.stroke();
         ctx.restore();
       }
+      if (view.aim && !busy) this.drawAim(ctx, view.aim, g);
+    },
+
+    /* 技能瞄准：合法目标格加一层朱砂底纹，悬停格再叠一圈强描边。
+     * 目的是让「现在点哪儿」一眼可见，而不是靠玩家猜规则。 */
+    drawAim(ctx, aim, g) {
+      const b = LL.Game.board;
+      if (!b) return;
+      const pulse = 0.5 + 0.5 * Math.sin(this.time * 5);
+      ctx.save();
+      for (let r = 0; r < b.R; r++) {
+        for (let c = 0; c < b.C; c++) {
+          if (!LL.Skills.validTarget(b, { r: r, c: c }, aim.id)) continue;
+          const rc = this.rectOf(r, c);
+          ctx.beginPath();
+          this.roundRect(ctx, rc.x + 3, rc.y + 3, rc.w - 6, rc.h - 6, g.cell * 0.26);
+          ctx.fillStyle = 'rgba(217,72,60,0.13)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(217,72,60,0.34)';
+          ctx.lineWidth = Math.max(1.2, g.cell * 0.028);
+          ctx.stroke();
+        }
+      }
+      if (aim.cell) {
+        const rc = this.rectOf(aim.cell.r, aim.cell.c);
+        ctx.beginPath();
+        this.roundRect(ctx, rc.x + 2, rc.y + 2, rc.w - 4, rc.h - 4, g.cell * 0.26);
+        ctx.strokeStyle = 'rgba(217,72,60,' + (0.6 + 0.35 * pulse) + ')';
+        ctx.lineWidth = Math.max(2.5, g.cell * 0.07);
+        ctx.shadowColor = 'rgba(217,72,60,0.75)';
+        ctx.shadowBlur = 14;
+        ctx.stroke();
+      }
+      ctx.restore();
     },
 
     /* ---------- 粒子与飘字 ---------- */
