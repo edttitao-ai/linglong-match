@@ -20,7 +20,7 @@ const path = require('path');
 
 /* 以 CommonJS 方式加载浏览器脚本（它们挂在 globalThis.LL 上）。
  * 文案文件也一起加载：这样第 9 节的「资产与文案齐全」才能真的查到字典。 */
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'levels.js',
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'skilldemo.js', 'levels.js',
   '../lang/zh.js', '../lang/en.js',
   'i18n.js', 'progress.js', 'quests.js', 'daily.js', 'modes.js', 'achievements.js',
   'anim.js', 'assets.js', 'audio.js', 'render.js', 'hud.js', 'input.js', 'game.js', 'ui.js'].forEach(function (f) {
@@ -519,6 +519,7 @@ section('8. 模块 API 完整性（源码引用的方法必须存在）');
     Resolver: ['create', 'beginTurn', 'beginSkill', 'beginScan', 'step', 'runTurn', 'shuffle'],
     Skills: ['def', 'order', 'qiStartFor', 'qiScaleFor', 'gainMult', 'gain', 'addQi', 'isFull',
       'cost', 'canUse', 'validTarget', 'planHammer', 'planCross', 'recolor', 'plan', 'lastStandOffer'],
+    SkillDemo: ['open', 'show', 'close', 'current', 'isRunning', 'resize'],
     Daily: ['build', 'hash', 'buildLayout'],
     Quests: ['generate', 'reroll', 'describe', 'progressText', 'apply'],
     Modes: ['endlessLevel', 'timedLevel', 'timedCoins', 'endlessCoins'],

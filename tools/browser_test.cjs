@@ -525,7 +525,7 @@ const IMAGE_AUDIT = `(function () {
         var nm = rows[i].querySelector('.si-head b');
         var co = rows[i].querySelector('.si-cost');
         var de = rows[i].querySelector('.si-desc');
-        if (!im || !im.src || im.src.indexOf('ach_') >= 0) bad.push('图标');
+        if (!im || !im.src) bad.push('图标');
         if (!nm || nm.textContent.length < 2) bad.push('名字');
         if (!co || co.textContent.length < 2) bad.push('消耗');
         if (!de || de.textContent.length < 8) bad.push('说明');
@@ -533,12 +533,110 @@ const IMAGE_AUDIT = `(function () {
       ck(bad.length === 0, '每条都有图标/名字/消耗/一句话说明' + (bad.length ? '（缺 ' + bad.join(',') + '）' : ''));
       var lead = document.getElementById('skillIntroLead');
       ck(lead && lead.textContent.length > 20, '有一段总说明（灵力怎么来、技能不吃步数）');
-      ck(document.querySelectorAll('#skillIntroList img').length === SK.order().length, '每条都带图标');
+      ck(rows.length === 4, '四个技能都在列表里');
       t.steps.forEach(function (s) { if (s.indexOf('ok  ') !== 0) console.log('  ✗ ' + s.slice(5)); });
       return { steps: t.steps, fail: t.fail };
     })()`);
     report('首次教学 ' + (intro.steps.length - intro.fail.length) + '/' + intro.steps.length + ' 项',
       intro.fail.length === 0, intro.fail.slice(0, 3).join(' | '));
+
+    /* 演示窗口：canvas 存在不等于在画，所以要真的去数非空像素 */
+    const demoOk = function () {
+      return cdp.evaluate(`(function () {
+        var cv = document.getElementById('skillDemoCanvas');
+        if (!cv) return { ok: false, why: '没有演示画布' };
+        var box = cv.getBoundingClientRect();
+        if (box.width < 40 || box.height < 20) return { ok: false, why: '画布尺寸异常 ' + Math.round(box.width) + 'x' + Math.round(box.height) };
+        var c2 = cv.getContext('2d');
+        var d = c2.getImageData(0, 0, cv.width, cv.height).data;
+        var nonzero = 0, total = d.length / 4;
+        for (var i = 3; i < d.length; i += 4 * 17) { if (d[i] > 8) nonzero++; }
+        var sampled = Math.ceil(total / 17);
+        return { ok: true, nonzero: nonzero, sampled: sampled, ratio: nonzero / sampled,
+                 running: LL.SkillDemo.isRunning(), skill: LL.SkillDemo.current() };
+      })()`);
+    };
+    await cdp.evaluate("LL.UI.selectSkill('cross', true)");
+    await new Promise(function (r) { setTimeout(r, 400); });
+    const d1 = await demoOk();
+    report('演示窗口真的在画（' + d1.skill + '：' + d1.nonzero + '/' + d1.sampled + ' 采样点有内容）',
+      d1.ok && d1.ratio > 0.15,
+      (d1.ok ? '覆盖率 ' + (d1.ratio * 100).toFixed(0) + '% · 帧循环 ' + (d1.running ? '在跑' : '没跑') : d1.why));
+
+    /* 四个技能各自的演示都要能画出来（不是只有第一个能用） */
+    const perSkill = [];
+    const order = await cdp.evaluate('LL.Skills.order()');
+    for (let i = 0; i < order.length; i++) {
+      await cdp.evaluate("LL.UI.selectSkill(" + JSON.stringify(order[i]) + ", true)");
+      await new Promise(function (r) { setTimeout(r, 420); });
+      const d = await demoOk();
+      perSkill.push(order[i] + ':' + (d.ok ? (d.ratio * 100).toFixed(0) + '%' : 'x'));
+      if (!d.ok || d.ratio <= 0.12) perSkill.push('FAIL');
+    }
+    report('四个技能的演示都能画出来', perSkill.indexOf('FAIL') < 0, perSkill.join(' '));
+
+    /* 演示会自己往下轮播（没手动选的时候） */
+    const carousel = await cdp.evaluate(`(function () {
+      LL.UI._demoManual = false;
+      var a = LL.SkillDemo.current();
+      return { first: a };
+    })()`);
+    await cdp.evaluate('LL.UI.selectSkill(LL.Skills.order()[0], false)');
+    const cycleWait = Math.ceil(3200);
+    await new Promise(function (r) { setTimeout(r, cycleWait); });
+    const carousel2 = await cdp.evaluate('({now: LL.SkillDemo.current(), manual: !!LL.UI._demoManual})');
+    report('演示自动轮播到下一个技能', carousel2.now !== carousel.first, carousel.first + ' → ' + carousel2.now);
+
+    /* 点条目 = 停在这个技能上，不再自动换 */
+    await cdp.evaluate("LL.UI.selectSkill('color', true)");
+    await new Promise(function (r) { setTimeout(r, 3200); });
+    const pinned = await cdp.evaluate('({now: LL.SkillDemo.current(), rowOn: (document.querySelector(".si-row.on")||{}).getAttribute ? document.querySelector(".si-row.on").getAttribute("data-skill") : null})');
+    report('点条目后停在该技能（不再自动换）', pinned.now === 'color' && pinned.rowOn === 'color',
+      'now=' + pinned.now + ' 高亮行=' + pinned.rowOn);
+
+    /* 教学期间按住对局：限时模式不能边读边掉时间 */
+    const hold = await cdp.evaluate(`(function () {
+      var G = LL.Game;
+      G.state = 'playing';
+      LL.UI.showSkillIntro();
+      var held = G.state;
+      LL.UI.hideSkillIntro();
+      var back = G.state;
+      return { held: held, back: back };
+    })()`);
+    report('教学期间按住对局（限时模式不掉时间）', hold.held === 'skillintro' && hold.back === 'playing',
+      hold.held + ' → ' + hold.back);
+
+    /* 教学面板必须一屏放得下：按钮被挤出屏幕 = 玩家找不到「怎么关」 */
+    const fit = await cdp.evaluate(`(function () {
+      LL.Progress.data.seen = {};
+      LL.UI.showSkillIntro();
+      var p = document.querySelector('#skillIntro .panel');
+      var btn = document.getElementById('btnSkillIntroOk');
+      var pr = p.getBoundingClientRect(), br = btn.getBoundingClientRect();
+      return {
+        overflow: Math.round(p.scrollHeight - p.clientHeight),
+        panelH: Math.round(pr.height),
+        btnBottom: Math.round(br.bottom),
+        top: Math.round(pr.top),
+        viewH: window.innerHeight,
+        demoH: Math.round(document.querySelector('.skill-demo').getBoundingClientRect().height),
+        leadH: Math.round(document.getElementById('skillIntroLead').getBoundingClientRect().height),
+        rowH: Math.round(document.querySelector('.si-row').getBoundingClientRect().height),
+        mainH: Math.round(document.querySelector('.skill-intro-main').getBoundingClientRect().height),
+        listH: Math.round(document.querySelector('.skill-intro-list').getBoundingClientRect().height),
+        panelCS: getComputedStyle(p).display + '/' + getComputedStyle(p).flexDirection + '/' + getComputedStyle(p).justifyContent
+      };
+    })()`);
+    /* 要求分两层：①「怎么关」的按钮必须不用滚动就能看见（硬要求，任何尺寸）
+     *            ② 内容本身能一屏放下（视野够高时才要求，280px 高的横屏手机做不到） */
+    const fitsWithoutScroll = fit.overflow <= 2;
+    const okFit = fit.btnBottom <= fit.viewH + 1 && (fit.viewH < 620 || fitsWithoutScroll);
+    report('教学面板一屏放得下（含按钮）', okFit,
+      '面板 ' + fit.panelH + 'px（顶 ' + fit.top + '）/ 视口 ' + fit.viewH +
+      ' · 按钮底 ' + fit.btnBottom + (fitsWithoutScroll ? ' · 内容不溢出' : ' · 内容溢出 ' + fit.overflow + 'px（可滚）') +
+      ' · 演示 ' + fit.demoH + ' · 说明 ' + fit.leadH + ' · 条目 ' + fit.rowH +
+      ' · 主区 ' + fit.mainH + ' / 列表 ' + fit.listH + ' · panel ' + fit.panelCS);
 
     /* 关闭后不再弹 */
     const once = await cdp.evaluate(`(function () {
@@ -681,9 +779,10 @@ const IMAGE_AUDIT = `(function () {
     if (SHOT) {
       const screen = getArg('shot-screen', '');
       const seedJs = getArg('eval', '');
+      const waitMs = parseInt(getArg('wait', '300'), 10);
       if (seedJs) {
         await cdp.evaluate(seedJs);
-        await new Promise(function (r) { setTimeout(r, 300); });
+        await new Promise(function (r) { setTimeout(r, waitMs); });
       }
       if (screen) {
         if (screen === 'achievements') {

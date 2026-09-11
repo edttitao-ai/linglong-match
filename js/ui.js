@@ -94,7 +94,9 @@
         skillTipDesc: $('#skillTipDesc'),
         skillIntro: $('#skillIntro'),
         skillIntroLead: $('#skillIntroLead'),
-        skillIntroList: $('#skillIntroList')
+        skillIntroList: $('#skillIntroList'),
+        skillDemo: $('#skillDemoCanvas'),
+        skillDemoCap: $('#skillDemoCap')
       };
 
       /* 标题页 */
@@ -242,6 +244,7 @@
         U.show(this.els.revive, false);
         U.show(this.els.lastStand, false);
         U.show(this.els.skillIntro, false);
+        LL.SkillDemo.close();          /* 离开对局就停掉演示的帧循环，别让它空转 */
       }
       if (name !== 'game' && name !== 'settings') U.show(this.els.settings, false);
       U.show(this.els.hud, name === 'game');
@@ -740,9 +743,13 @@
 
     /* ---------- 技能说明（首次教学 + 暂停面板可重看） ---------- */
 
+    /* 演示窗口 + 四个技能条目：
+     * 演示会自动轮播（每个技能播一轮就换下一个），点某一条就停在那个技能上——
+     * 想看的人可以一直看同一个，不想看的人不用动它也会自己演完。 */
     buildSkillIntro() {
       const list = this.els.skillIntroList;
       if (!list) return;
+      const self = this;
       list.innerHTML = '';
       if (this.els.skillIntroLead) {
         /* 用 <b> 标出「不能购买」——这是玩家最容易误解的一点 */
@@ -754,6 +761,7 @@
       LL.Skills.order().forEach(function (id) {
         const info = LL.Skills.def(id);
         const row = U.el('div', 'si-row');
+        row.setAttribute('data-skill', id);
         row.innerHTML =
           '<img src="' + LL.Assets.path(info.icon) + '" alt="">' +
           '<div class="si-body">' +
@@ -761,18 +769,68 @@
             '<span class="si-cost">' + I18N.t('skillTipCost', { n: info.cost }) + '</span></div>' +
             '<div class="si-desc">' + I18N.t('skill_' + id + '_d') + '</div>' +
           '</div>';
+        row.addEventListener('click', function () { self.selectSkill(id, true); });
         list.appendChild(row);
       });
+    },
+
+    /* 切到某个技能的演示；manual=true 表示玩家点的，不再自动轮播 */
+    selectSkill(id, manual) {
+      if (manual) this._demoManual = true;
+      this._demoSkill = id;
+      if (LL.SkillDemo.isRunning()) {
+        /* 已经在这个技能上就别重播——不然「点一下当前这条」会把动画打回开头。
+         * 演的是别的技能才切过去（自动轮播走的就是这条路）。 */
+        if (LL.SkillDemo.current() !== id) LL.SkillDemo.show(id);
+      } else if (this.els.skillDemo) {
+        this.startDemo(id);
+      }
+      this.syncDemoRow(id);
+      if (this.els.skillDemoCap) {
+        this.els.skillDemoCap.textContent = I18N.t('skill_' + id) + ' · ' + I18N.t('skill_' + id + '_use');
+      }
+    },
+
+    syncDemoRow(id) {
+      const rows = U.$$('#skillIntroList .si-row');
+      for (let i = 0; i < rows.length; i++) {
+        rows[i].classList.toggle('on', rows[i].getAttribute('data-skill') === id);
+      }
+    },
+
+    startDemo(id) {
+      const cv = this.els.skillDemo;
+      if (!cv) return;
+      const self = this;
+      const order = LL.Skills.order();
+      LL.SkillDemo.open(cv, id, function (played) {
+        /* 一轮播完：玩家没手动选过就自动演下一个 */
+        if (self._demoManual) return;
+        const next = order[(order.indexOf(played) + 1) % order.length];
+        self.selectSkill(next, false);
+      });
+      this.syncDemoRow(id);
     },
 
     showSkillIntro() {
       this.buildSkillIntro();
       this.hideSkillTip();
+      this._demoManual = false;
+      this._demoSkill = null;
+      LL.Game.holdForIntro();          /* 教学期间按住对局：限时模式不能边读边掉时间 */
       U.show(this.els.skillIntro, true);
+      /* 元素要先可见才有尺寸，canvas 尺寸得等下一帧量。
+       * 这一帧里如果已经有人选了技能（点条目 / 调试注入），就不要抢回去。 */
+      const self = this;
+      setTimeout(function () {
+        if (!self._demoSkill) self.selectSkill(LL.Skills.order()[0], false);
+      }, 0);
     },
 
     hideSkillIntro() {
+      LL.SkillDemo.close();
       U.show(this.els.skillIntro, false);
+      LL.Game.releaseIntro();
       /* 关闭才算「看过」：中途刷新页面还能再看到一次，不会永久错过 */
       LL.Progress.markSeen('skills');
     },

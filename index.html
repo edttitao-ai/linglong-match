@@ -331,13 +331,20 @@
     </div>
   </div>
 
-  <!-- 局内技能说明：首次拿到技能栏时自动弹一次，之后可从暂停面板重看 -->
+  <!-- 局内技能说明：首次拿到技能栏时自动弹一次，之后可从暂停面板重看。
+       上面是演示窗口（用真块精灵循环播放这个技能的效果），下面是四个技能条目。 -->
   <div id="skillIntro" class="overlay hidden">
     <div class="panel skill-intro-panel">
       <h2 data-i18n="skill_intro_title">灵力 · 局内技能</h2>
       <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
       <p class="skill-intro-lead" id="skillIntroLead"></p>
-      <div class="skill-intro-list" id="skillIntroList"></div>
+      <div class="skill-intro-main">
+        <div class="skill-demo">
+          <canvas id="skillDemoCanvas"></canvas>
+          <div class="demo-cap" id="skillDemoCap"></div>
+        </div>
+        <div class="skill-intro-list" id="skillIntroList"></div>
+      </div>
       <button id="btnSkillIntroOk" class="primary wide" data-i18n="skill_intro_ok">知道了，开打</button>
     </div>
   </div>
@@ -366,6 +373,7 @@
 <script src="js/special.js"></script>
 <script src="js/resolver.js"></script>
 <script src="js/skills.js"></script>
+<script src="js/skilldemo.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/daily.js"></script>
 <script src="js/quests.js"></script>

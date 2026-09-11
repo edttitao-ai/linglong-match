@@ -395,6 +395,24 @@
       return true;
     },
 
+    /* 教学是「停下来说明」：读说明的时候对局不该继续跑。
+     * 限时模式尤其明显——不然玩家一边看演示一边掉时间。
+     * 不给它单独的状态机分支：canInput() 只认 playing，所以教学态天然不可操作。 */
+    holdForIntro() {
+      if (this.state !== 'playing' && this.state !== 'intro') return false;
+      this.prevState = this.state;
+      this.state = 'skillintro';
+      return true;
+    },
+
+    releaseIntro() {
+      if (this.state !== 'skillintro') return false;
+      this.state = this.prevState === 'intro' ? 'playing' : (this.prevState || 'playing');
+      this.prevState = null;
+      this.notifyInput();
+      return true;
+    },
+
     /* ---------------- 绝处逢生 ----------------
      * 步数耗尽且目标未完成时，先给一次「花灵力换步」的机会（不走金币、不破铁律），
      * 灵力不够才轮到金币续步那条路——把「要输了」改写成「花掉攒的大招」。 */
