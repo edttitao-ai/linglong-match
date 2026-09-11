@@ -672,7 +672,10 @@
       this.syncBoardInset();
     },
 
-    /* 只列出本关实际存在的颜色——选了盘上没有的颜色等于白扔灵力 */
+    /* 只列出本关实际存在的颜色——选了盘上没有的颜色等于白扔灵力。
+     * 候选一律用**块图标**而不是纯色圆点：这游戏本来就靠「颜色 + 轮廓」双重区分
+     *（色觉障碍玩家也能只凭形状分辨），选色只给一块颜色等于把这套设计丢掉；
+     * 而且玩家嘴里说的是「莲花那个」，不是「粉色那个」。 */
     buildColorRing() {
       const ring = this.els.colorRing;
       if (!ring) return;
@@ -681,12 +684,14 @@
       ring.innerHTML = '';
       for (let t = 0; t < n; t++) {
         const info = CFG.TILE_INFO[t];
-        const dot = U.el('button', 'color-dot');
-        dot.type = 'button';
-        dot.style.background = 'radial-gradient(circle at 34% 30%, ' + info.light + ', ' + info.main + ')';
-        dot.title = I18N.tileName(t);
-        dot.addEventListener('click', function () { self.pickColor(t); });
-        ring.appendChild(dot);
+        const name = I18N.tileName(t);
+        const btn = U.el('button', 'color-dot');
+        btn.type = 'button';
+        btn.innerHTML = '<img src="' + LL.Assets.path('tile_' + info.id) + '" alt="">';
+        btn.title = name;
+        btn.setAttribute('aria-label', name);
+        btn.addEventListener('click', function () { self.pickColor(t); });
+        ring.appendChild(btn);
       }
     },
 

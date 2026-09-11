@@ -358,36 +358,36 @@
     /* 第 2 行: 玉 灯 玉 —— 中间那格是「就差这一块」 */
     if (match <= 0) highlight(T.r, T.c, 0.4 + 0.6 * Math.sin(t * 12), 'rgba(217,72,60,0.95)');
 
-    /* 选色环：底部三个色点，告诉玩家「选了颜色才会变」 */
+    /* 选色环：候选画的是**块图标本身**，不是纯色点。
+     * 玩家认的是「莲花 / 铜钱」，不是「粉色 / 黄色」——图标自带轮廓，跟棋盘上的东西一一对应，
+     * 一看就知道「选它会把格子变成什么样」。 */
     if (t > 0.35 && match <= 0) {
       const colors = [0, 1, 2];
-      const cw = H * 0.14;
-      const total = colors.length * cw + (colors.length - 1) * cw * 0.35;
-      const y = H - cw * 0.72;
+      const cw = H * 0.2;
+      const total = colors.length * cw + (colors.length - 1) * cw * 0.4;
+      const y = H - cw * 0.62;
       colors.forEach(function (ci, i) {
-        const x = (W - total) / 2 + i * cw * 1.35 + cw / 2;
+        const x = (W - total) / 2 + i * cw * 1.4 + cw / 2;
         const chosen = ci === 0;
-        const k = chosen ? U.clamp((t - 0.45) / 0.3, 0, 1) : 0.55;
+        const k = chosen ? U.clamp((t - 0.45) / 0.3, 0, 1) : 0.45;
         ctx.save();
         ctx.globalAlpha = k;
-        ctx.beginPath();
-        ctx.arc(x, y, cw * (chosen ? 0.46 : 0.36), 0, Math.PI * 2);
-        ctx.fillStyle = CFG.TILE_INFO[ci].main;
-        ctx.fill();
-        ctx.strokeStyle = chosen ? '#C9A227' : 'rgba(120,96,60,0.4)';
-        ctx.lineWidth = chosen ? 2.5 : 1.5;
-        ctx.stroke();
+        if (chosen) {
+          ctx.beginPath();
+          ctx.arc(x, y, cw * 0.55, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,246,214,0.9)';
+          ctx.fill();
+          ctx.strokeStyle = '#C9A227';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
         ctx.restore();
-        /* 选中的颜色飞向目标格 */
+        drawTile(x, y, cw, ci, { alpha: k, scale: chosen ? 1 : 0.88 });
+        /* 选中的那一块飞向目标格：整块图标飞过去，不是一团颜色 */
         if (chosen && pick > 0 && pick < 1) {
           const p = cellXY(T.r, T.c);
-          ctx.save();
-          ctx.globalAlpha = 0.85;
-          ctx.beginPath();
-          ctx.arc(U.lerp(x, p.x, U.easeOutCubic(pick)), U.lerp(y, p.y, U.easeOutCubic(pick)), cw * 0.3, 0, Math.PI * 2);
-          ctx.fillStyle = CFG.TILE_INFO[0].main;
-          ctx.fill();
-          ctx.restore();
+          drawTile(U.lerp(x, p.x, U.easeOutCubic(pick)), U.lerp(y, p.y, U.easeOutCubic(pick)),
+            cw * 0.9, 0, { alpha: 0.92 });
         }
       });
     }

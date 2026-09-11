@@ -538,23 +538,28 @@
     },
 
     /* 技能瞄准：合法目标格加一层朱砂底纹，悬停格再叠一圈强描边。
-     * 目的是让「现在点哪儿」一眼可见，而不是靠玩家猜规则。 */
+     * 目的是让「现在点哪儿」一眼可见，而不是靠玩家猜规则。
+     * 到了选色阶段（灵犀一点第二步）就不再铺底纹了——格子已经选好，
+     * 再满屏标一遍「哪些格能改」只会把已选的那一格埋掉。 */
     drawAim(ctx, aim, g) {
       const b = LL.Game.board;
       if (!b) return;
       const pulse = 0.5 + 0.5 * Math.sin(this.time * 5);
+      const picking = aim.stage === 'color';
       ctx.save();
-      for (let r = 0; r < b.R; r++) {
-        for (let c = 0; c < b.C; c++) {
-          if (!LL.Skills.validTarget(b, { r: r, c: c }, aim.id)) continue;
-          const rc = this.rectOf(r, c);
-          ctx.beginPath();
-          this.roundRect(ctx, rc.x + 3, rc.y + 3, rc.w - 6, rc.h - 6, g.cell * 0.26);
-          ctx.fillStyle = 'rgba(217,72,60,0.13)';
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(217,72,60,0.34)';
-          ctx.lineWidth = Math.max(1.2, g.cell * 0.028);
-          ctx.stroke();
+      if (!picking) {
+        for (let r = 0; r < b.R; r++) {
+          for (let c = 0; c < b.C; c++) {
+            if (!LL.Skills.validTarget(b, { r: r, c: c }, aim.id)) continue;
+            const rc = this.rectOf(r, c);
+            ctx.beginPath();
+            this.roundRect(ctx, rc.x + 3, rc.y + 3, rc.w - 6, rc.h - 6, g.cell * 0.26);
+            ctx.fillStyle = 'rgba(217,72,60,0.13)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(217,72,60,0.34)';
+            ctx.lineWidth = Math.max(1.2, g.cell * 0.028);
+            ctx.stroke();
+          }
         }
       }
       if (aim.cell) {

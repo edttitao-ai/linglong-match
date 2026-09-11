@@ -1419,16 +1419,25 @@
   box-shadow: 0 8px 20px rgba(70, 44, 12, 0.24);
 }
 
+/* 选色候选：装的是块图标本身，不是纯色圆点。
+ * 玩家认的是「莲花 / 铜钱」，不是「粉色 / 黄色」——图标自带轮廓，也照顾色觉障碍。 */
 .color-dot {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 2px 5px rgba(70, 44, 12, 0.28);
-  transition: transform 0.1s ease;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  background: none;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
+.color-dot img { width: 100%; height: 100%; display: block; }
+.color-dot:hover { border-color: var(--gold); }
 .color-dot:active { transform: scale(0.9); }
+.color-dot:focus-visible { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232, 200, 106, 0.4); }
 
 /* 窄屏：按钮收小一号，别把棋盘挤没了 */
 @media (max-width: 460px) {
@@ -1436,6 +1445,7 @@
   .skill-slot { width: 40px; height: 40px; border-radius: 12px; }
   .skill-slot img { width: 23px; height: 23px; }
   .qi-wrap { min-width: 64px; }
+  .color-dot { width: 34px; height: 34px; border-radius: 10px; }
 }
 
 /* 矮屏（横屏小手机）：技能栏收成一行小按钮，把高度还给棋盘 */
@@ -1448,7 +1458,7 @@
   .qi-bar { height: 8px; }
   .qi-num { font-size: 10px; }
   .qi-num b { font-size: 12px; }
-  .color-dot { width: 26px; height: 26px; }
+  .color-dot { width: 30px; height: 30px; border-radius: 9px; }
 }
 
 /* ================= 技能说明（长按 / 悬停说明卡 + 首次教学） ================= */

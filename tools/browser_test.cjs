@@ -292,6 +292,19 @@ const DRILL_STEPS = [
       __ck(!!G.aim && G.aim.stage === 'color', '选格后进入选色阶段');
       var dots = document.querySelectorAll('#colorRing .color-dot').length;
       __ck(dots === G.board.colors, '选色环只列本关存在的颜色（' + dots + '/' + G.board.colors + '）');
+      /* 候选必须是块图标：纯色圆点认不出是哪个元素，也丢掉了「颜色+轮廓」的双重区分 */
+      var imgs = document.querySelectorAll('#colorRing .color-dot img');
+      __ck(imgs.length === dots && dots > 0, '选色环用块图标而不是纯色块（' + imgs.length + '/' + dots + '）');
+      var badSrc = 0, named = 0;
+      for (var q = 0; q < imgs.length; q++) {
+        if ((imgs[q].getAttribute('src') || '').indexOf('tile_') < 0) badSrc++;
+        if (imgs[q].getAttribute('src')) {
+          if (!imgs[q].complete || imgs[q].naturalWidth === 0) badSrc++;
+        }
+        if (imgs[q].parentNode.getAttribute('aria-label')) named++;
+      }
+      __ck(badSrc === 0, '每个候选都指向真实存在的块素材且已加载');
+      __ck(named === dots, '每个候选都带元素名（读屏 / 悬停可辨）');
       __t.colorCell = { r: __t.plain.r, c: __t.plain.c };
       G.castSkill('color', __t.plain, 1, G.aim.cost);
       var tl = G.board.cells[__t.colorCell.r][__t.colorCell.c];
