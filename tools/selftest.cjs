@@ -424,7 +424,7 @@ section('6. 死局洗牌');
 section('7. 关卡数据合法性');
 {
   const levels = LL.LEVELS || [];
-  eq(levels.length, 30, '共 30 关');
+  eq(levels.length, 50, '共 50 关');
   const problems = [];
   levels.forEach(function (lv, i) {
     if (lv.id !== i + 1) problems.push('第 ' + lv.id + ' 关编号不连续');

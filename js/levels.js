@@ -123,6 +123,76 @@
       '........',
       '..v..v..',
       '..v..v..'
+    ],
+    /* ---- 第五章之后新增：让第四十关以后还有「没见过的盘面」 ---- */
+    /* 藤格：藤蔓铺成网格，交换处处受限，但重力只被竖线切开 */
+    vineLattice: [
+      '..v..v..',
+      '........',
+      '..v..v..',
+      '........',
+      '........',
+      '..v..v..',
+      '........',
+      '..v..v..'
+    ],
+    /* 石带：两道横墙，把盘面分成上中下三层 */
+    stoneBands: [
+      '........',
+      '..####..',
+      '........',
+      '........',
+      '........',
+      '........',
+      '..####..',
+      '........'
+    ],
+    /* 霜藤交错：四角对角的霜与藤，中间留出大片活动区 */
+    frostVine: [
+      '..*..*..',
+      '..v..v..',
+      '........',
+      '.*......',
+      '......*.',
+      '........',
+      '..v..v..',
+      '..*..*..'
+    ],
+    /* 银钩：两枚 L 形石钩斜对角相望。同样利用「成簇好打」——一次三连能啃掉钩子上的好几块。 */
+    hooks: [
+      '..##....',
+      '...#....',
+      '........',
+      '........',
+      '........',
+      '........',
+      '....#...',
+      '....##..'
+    ],
+    /* 铁壁：两座 2×2 石垒斜对角摆开（收官关用）。
+     * 摆布局时按「打击次数」估难度（石锁 2 次、霜 1 次），而且**成簇比摊开好打**——
+     * 一次三连能同时啃掉挤在一起的好几个。第一版把 4 个石锁摊在四个角，
+     * 同样 8 次打击，胜率只有 29%；改成两座石垒后回到合理区间。 */
+    bastion: [
+      '..##....',
+      '..##....',
+      '........',
+      '........',
+      '........',
+      '........',
+      '....##..',
+      '....##..'
+    ],
+    /* 藤墙：两列藤蔓把盘面竖切成三段，重力分段最明显的一张图 */
+    vineWalls: [
+      '...vv...',
+      '...vv...',
+      '...vv...',
+      '........',
+      '........',
+      '...vv...',
+      '...vv...',
+      '...vv...'
     ]
   };
 
@@ -163,7 +233,31 @@
     { id: 27, name: '金石为开', nameEn: 'Iron Will',     colors: 6, moves: 24, objectives: [{ type: 'score', target: 4200 }, { type: 'clear' }], stars: [4530, 5200, 6200], layout: LAYOUTS.mixedB, ...BOOST_QI },
     { id: 28, name: '拨云见日', nameEn: 'Clouds Part',   colors: 6, moves: 22, objectives: [{ type: 'clear' }], stars: [2945, 3800, 5000], layout: LAYOUTS.mixedC, ...BOOST_QI },
     { id: 29, name: '玲珑百转', nameEn: 'Kaleidoscope',  colors: 6, moves: 21, objectives: [{ type: 'collect', color: 2, count: 10 }, { type: 'clear' }], stars: [2960, 3800, 4800], layout: LAYOUTS.vineBand, ...BOOST_QI },
-    { id: 30, name: '玲珑归元', nameEn: 'Linglong Complete', colors: 6, moves: 24, objectives: [{ type: 'score', target: 4600 }, { type: 'clear' }], stars: [4940, 5600, 6800], layout: LAYOUTS.finale, ...BOOST_QI }
+    { id: 30, name: '玲珑归元', nameEn: 'Linglong Complete', colors: 6, moves: 24, objectives: [{ type: 'score', target: 4600 }, { type: 'clear' }], stars: [4940, 5600, 6800], layout: LAYOUTS.finale, ...BOOST_QI },
+
+    /* ---- 第五章 · 双目标与缠绕（每关两个目标，逼你在两件事之间分配步数） ---- */
+    { id: 31, name: '双鲤戏珠', nameEn: 'Twin Carps',    colors: 6, moves: 24, objectives: [{ type: 'score', target: 4200 }, { type: 'collect', color: 1, count: 18 }], stars: [4445, 4700, 5200], layout: LAYOUTS.mixedA },
+    { id: 32, name: '藤萝密布', nameEn: 'Vine Lattice',  colors: 6, moves: 25, objectives: [{ type: 'clear' }], stars: [3080, 4600, 5800], layout: LAYOUTS.vineLattice },
+    { id: 33, name: '石破天惊', nameEn: 'Stone Breaker', colors: 6, moves: 26, objectives: [{ type: 'score', target: 4200 }, { type: 'clear' }], stars: [4625, 5000, 5800], layout: LAYOUTS.stoneBands },
+    { id: 34, name: '霜华满地', nameEn: 'Frost Bloom',   colors: 6, moves: 23, objectives: [{ type: 'collect', color: 2, count: 20 }, { type: 'collect', color: 4, count: 18 }], stars: [3355, 3900, 4700], layout: LAYOUTS.frostCross },
+    { id: 35, name: '珠联璧合', nameEn: 'Paired Gems',   colors: 6, moves: 25, objectives: [{ type: 'score', target: 4400 }, { type: 'collect', color: 0, count: 20 }], stars: [4670, 4900, 5400], layout: LAYOUTS.frostVine },
+    { id: 36, name: '层峦叠嶂', nameEn: 'Ridges',        colors: 6, moves: 27, objectives: [{ type: 'clear' }], stars: [3360, 4500, 5900], layout: LAYOUTS.vineWalls },
+    { id: 37, name: '玉树琼枝', nameEn: 'Jade Branches', colors: 6, moves: 26, objectives: [{ type: 'collect', color: 5, count: 22 }, { type: 'clear' }], stars: [4040, 5000, 5800], layout: LAYOUTS.frostVine },
+    { id: 38, name: '星罗棋布', nameEn: 'Starry Spread', colors: 6, moves: 25, objectives: [{ type: 'score', target: 4400 }, { type: 'clear' }], stars: [4770, 5100, 6200], layout: LAYOUTS.vineLattice },
+    { id: 39, name: '云开月明', nameEn: 'Moon Revealed', colors: 6, moves: 24, objectives: [{ type: 'collect', color: 3, count: 22 }, { type: 'collect', color: 1, count: 16 }], stars: [3375, 3900, 5000], layout: LAYOUTS.stoneBands },
+    { id: 40, name: '万象更新', nameEn: 'All Renewed',   colors: 6, moves: 27, objectives: [{ type: 'score', target: 4400 }, { type: 'clear' }], stars: [4770, 5200, 6300], layout: LAYOUTS.mixedB },
+
+    /* ---- 第六章 · 收官（三目标登场，盘面与步数都压到最紧） ---- */
+    { id: 41, name: '百转千回', nameEn: 'Endless Turns', colors: 6, moves: 26, objectives: [{ type: 'score', target: 4800 }, { type: 'collect', color: 4, count: 20 }], stars: [5005, 5300, 5700], layout: LAYOUTS.vineRing },
+    { id: 42, name: '铁画银钩', nameEn: 'Iron Strokes',  colors: 6, moves: 30, objectives: [{ type: 'clear' }], stars: [3440, 4800, 5900], layout: LAYOUTS.hooks },
+    { id: 43, name: '锦绣河山', nameEn: 'Fair Land',     colors: 6, moves: 27, objectives: [{ type: 'score', target: 4800 }, { type: 'collect', color: 0, count: 22 }], stars: [5085, 5400, 5700], layout: LAYOUTS.mixedC },
+    { id: 44, name: '海阔天空', nameEn: 'Wide Horizon',  colors: 6, moves: 27, objectives: [{ type: 'collect', color: 1, count: 18 }, { type: 'collect', color: 3, count: 18 }, { type: 'clear' }], stars: [3685, 4500, 5600], layout: LAYOUTS.stoneBands },
+    { id: 45, name: '玲珑剔透', nameEn: 'Crystal Clear', colors: 6, moves: 28, objectives: [{ type: 'score', target: 5000 }, { type: 'clear' }], stars: [5525, 5800, 6600], layout: LAYOUTS.vineLattice },
+    { id: 46, name: '炉火纯青', nameEn: 'Refined',       colors: 6, moves: 27, objectives: [{ type: 'collect', color: 2, count: 24 }, { type: 'clear' }], stars: [3755, 4800, 5800], layout: LAYOUTS.mixedC },
+    { id: 47, name: '出神入化', nameEn: 'Transcendent',  colors: 6, moves: 28, objectives: [{ type: 'score', target: 5000 }, { type: 'collect', color: 5, count: 20 }, { type: 'clear' }], stars: [5320, 5600, 6400], layout: LAYOUTS.frostVine },
+    { id: 48, name: '天工开物', nameEn: 'Craft of Heaven', colors: 6, moves: 25, objectives: [{ type: 'collect', color: 0, count: 20 }, { type: 'collect', color: 3, count: 20 }, { type: 'collect', color: 5, count: 20 }], stars: [3930, 4400, 4900], layout: LAYOUTS.mixedA },
+    { id: 49, name: '九九归一', nameEn: 'All Returns One', colors: 6, moves: 28, objectives: [{ type: 'score', target: 5200 }, { type: 'clear' }], stars: [5490, 5900, 6500], layout: LAYOUTS.finale },
+    { id: 50, name: '玲珑无双', nameEn: 'Unrivalled',    colors: 6, moves: 32, objectives: [{ type: 'score', target: 4200 }, { type: 'collect', color: 2, count: 22 }, { type: 'clear' }], stars: [4755, 5300, 6700], layout: LAYOUTS.bastion }
   ];
 
   /* 清障关的障碍总数 */

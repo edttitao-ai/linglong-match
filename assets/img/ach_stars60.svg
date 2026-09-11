@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <circle cx="12" cy="12.4" r="7.4" fill="#FFF3C4" stroke="#8A5F18" stroke-width="1.5"/>
-  <circle cx="12" cy="12.4" r="4.9" fill="none" stroke="#C9A227" stroke-width="0.9" opacity="0.65"/>
-  <path d="M4.40 1.90 L4.99 3.59 L6.78 3.63 L5.35 4.71 L5.87 6.42 L4.40 5.40 L2.93 6.42 L3.45 4.71 L2.02 3.63 L3.81 3.59 Z" fill="#E8C86A" stroke="#8A5F18" stroke-width="0.8"/>
-  <path d="M19.80 3.10 L20.33 4.47 L21.80 4.55 L20.66 5.48 L21.03 6.90 L19.80 6.10 L18.57 6.90 L18.94 5.48 L17.80 4.55 L19.27 4.47 Z" fill="#E8C86A" stroke="#8A5F18" stroke-width="0.8"/>
-</svg>

@@ -9,18 +9,22 @@
   const LL = (global.LL = global.LL || {});
   const CFG = LL.CFG;
 
-  /* 画卷层与星数门槛 */
-  const SCROLL_TIERS = [10, 25, 45, 65, 90];
+  /* 画卷层与星数门槛。
+   * 上限跟着关卡数走：50 关 × 3 星 = 150 星，所以门槛整体上移——
+   * 原本按 30 关（90 星）配的 [10,25,45,65,90] 在 50 关下会早早全开，沉淀感就没了。 */
+  const SCROLL_TIERS = [15, 40, 75, 115, 150];
 
   /* 徽记图形与成就一一对应（icon 键必须登记在 js/assets.js 的 IMAGES 里，
    * 少了就会被 tools/selftest.cjs 第 10 节的素材完整性检查拦下）。
-   * 设计意图：未解锁时列表会降饱和到 50% 透明，所以每枚徽记靠轮廓区分，不靠颜色。 */
+   * 设计意图：未解锁时列表会降饱和到 50% 透明，所以每枚徽记靠轮廓区分，不靠颜色。
+   * 星级门槛同样按 150 星上限重新分布：20 / 50 / 90 / 120 四档 + 满星。 */
   const LIST = [
     { id: 'firstStar', icon: 'ach_firstStar', coins: 30, check: function (c) { return c.stars >= 1; } },
-    { id: 'stars10', icon: 'ach_stars10', coins: 50, check: function (c) { return c.stars >= 10; } },
-    { id: 'stars30', icon: 'ach_stars30', coins: 80, check: function (c) { return c.stars >= 30; } },
-    { id: 'stars60', icon: 'ach_stars60', coins: 120, check: function (c) { return c.stars >= 60; } },
-    { id: 'stars90', icon: 'ach_stars90', coins: 200, check: function (c) { return c.stars >= 90; } },
+    { id: 'stars20', icon: 'ach_stars20', coins: 50, check: function (c) { return c.stars >= 20; } },
+    { id: 'stars50', icon: 'ach_stars50', coins: 90, check: function (c) { return c.stars >= 50; } },
+    { id: 'stars90', icon: 'ach_stars90', coins: 140, check: function (c) { return c.stars >= 90; } },
+    { id: 'stars120', icon: 'ach_stars120', coins: 200, check: function (c) { return c.stars >= 120; } },
+    { id: 'allClear', icon: 'ach_allClear', coins: 260, check: function (c) { return c.clearedLevels >= c.levelCount; } },
     { id: 'cascade8', icon: 'ach_cascade8', coins: 60, check: function (c) { return c.stats.maxCascade >= 8; } },
     { id: 'specials100', icon: 'ach_specials100', coins: 60, check: function (c) { return c.stats.specialsFired >= 100; } },
     { id: 'obst200', icon: 'ach_obst200', coins: 60, check: function (c) { return c.stats.obstaclesBroken >= 200; } },
@@ -32,9 +36,14 @@
 
   /* 汇总判定上下文 */
   function context(data) {
-    let stars = 0;
+    let stars = 0, clearedLevels = 0;
+    const levels = LL.LEVELS || [];
     for (const k in data.stars) {
       if (Object.prototype.hasOwnProperty.call(data.stars, k)) stars += data.stars[k];
+    }
+    /* 「通关」以拿到过星为准（1 星即通关）；关卡数从 LL.LEVELS 取，加关卡不用改这里 */
+    for (let i = 0; i < levels.length; i++) {
+      if ((data.stars[levels[i].id] || 0) > 0) clearedLevels++;
     }
     let dailyDays = 0;
     for (const k in data.daily.cleared) {
@@ -42,6 +51,8 @@
     }
     return {
       stars: stars,
+      clearedLevels: clearedLevels,
+      levelCount: levels.length,
       stats: data.stats || {},
       dailyDays: dailyDays,
       streakBest: (data.streak && data.streak.best) || 0,

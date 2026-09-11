@@ -451,29 +451,27 @@ function iconAch(id) {
       `  <path d="${starPath(12, 10.2, 8.2, 3.5, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.4" stroke-linejoin="round"/>\n` +
       `  <path d="M4.6 21.2 h14.8" fill="none" stroke="${INK}" stroke-width="1.9" stroke-linecap="round" opacity="0.7"/>\n` + tail;
   }
-  /* 小有所成：三颗小星 */
-  if (id === 'stars10') {
+  /* 星阶：小有所成 / 渐入佳境 / 玲珑满堂 / 三星照胆 */
+  if (id === 'stars20') {
     return head +
       `  <path d="${starPath(6.2, 7.8, 4.0, 1.7, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` +
       `  <path d="${starPath(17.8, 7.8, 4.0, 1.7, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` +
       `  <path d="${starPath(12, 17.0, 4.6, 2.0, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.2" stroke-linejoin="round"/>\n` + tail;
   }
-  /* 渐入佳境：拾级而上 + 星 */
-  if (id === 'stars30') {
+  if (id === 'stars50') {
     return head +
       `  <path d="M3.4 20.8 h5 v-4.4 h4.8 v-4.4 h4.6" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>\n` +
       `  <path d="${starPath(18.2, 7.0, 4.4, 1.9, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` + tail;
   }
-  /* 玲珑满堂：满月 + 两点星 */
-  if (id === 'stars60') {
+  if (id === 'stars90') {
     return head +
       `  <circle cx="12" cy="12.4" r="7.4" fill="#FFF3C4" stroke="#8A5F18" stroke-width="1.5"/>\n` +
       `  <circle cx="12" cy="12.4" r="4.9" fill="none" stroke="${GOLD}" stroke-width="0.9" opacity="0.65"/>\n` +
       `  <path d="${starPath(4.4, 4.4, 2.5, 1.0, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="0.8"/>\n` +
       `  <path d="${starPath(19.8, 5.2, 2.1, 0.9, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="0.8"/>\n` + tail;
   }
-  /* 三星照胆：北斗七星——七颗星靠连线成勺，线要够重才看得出是「星座」而不是一堆点 */
-  if (id === 'stars90') {
+  if (id === 'stars120') {
+    /* 北斗七星：唯一以「线」为主形的徽记，线要够重才看得出是星座而不是一堆点 */
     const d = [[4.8, 8.6], [8.2, 6.0], [11.6, 7.2], [14.2, 10.0], [14.8, 14.2], [19.0, 17.2], [13.4, 18.8]];
     let dots = '';
     for (let i = 0; i < d.length; i++) {
@@ -482,6 +480,14 @@ function iconAch(id) {
     return head +
       `  <path d="M${d.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L')}" fill="none" stroke="${INK}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>\n` +
       dots + tail;
+  }
+  /* 玲珑无双：通关全部关卡——卷轴收束成结，中央一枚朱砂印 */
+  if (id === 'allClear') {
+    return head +
+      `  <path d="M4.2 6.6 h15.6 v11.6 l-7.8 3.6 -7.8 -3.6 z" fill="#FBF6EA" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>\n` +
+      `  <path d="M4.2 6.6 h15.6 M4.2 11.2 h15.6" fill="none" stroke="${INK}" stroke-width="1.1" opacity="0.45"/>\n` +
+      `  <rect x="8.4" y="12.6" width="7.2" height="7.2" rx="1.4" fill="${CINNABAR}" stroke="#8E231D" stroke-width="1.2"/>\n` +
+      `  <path d="M10.4 15.2 h3.2 M10.4 17.4 h3.2" fill="none" stroke="#FFF6E2" stroke-width="1.3" stroke-linecap="round"/>\n` + tail;
   }
   /* 连锁狂人：同心涟漪 */
   if (id === 'cascade8') {
@@ -778,10 +784,11 @@ const files = {
   'board_frame.svg': boardFrame(),
   /* 成就徽记：与 Achievements.LIST 的 id 一一对应 */
   'ach_firstStar.svg': iconAch('firstStar'),
-  'ach_stars10.svg': iconAch('stars10'),
-  'ach_stars30.svg': iconAch('stars30'),
-  'ach_stars60.svg': iconAch('stars60'),
+  'ach_stars20.svg': iconAch('stars20'),
+  'ach_stars50.svg': iconAch('stars50'),
   'ach_stars90.svg': iconAch('stars90'),
+  'ach_stars120.svg': iconAch('stars120'),
+  'ach_allClear.svg': iconAch('allClear'),
   'ach_cascade8.svg': iconAch('cascade8'),
   'ach_specials100.svg': iconAch('specials100'),
   'ach_obst200.svg': iconAch('obst200'),

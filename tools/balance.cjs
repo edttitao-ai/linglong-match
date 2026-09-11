@@ -27,6 +27,8 @@ const getArg = (name, def) => {
 };
 const RUNS = getArg('runs', 200);
 const ONLY = getArg('level', 0);
+const FROM = getArg('from', 0);
+const TO = getArg('to', 0);
 
 /* ---------- 贪心玩家 ---------- */
 
@@ -400,7 +402,13 @@ if (SKILL_MODE) {
   process.exit(0);
 }
 
-const levels = LL.LEVELS.filter(function (lv) { return !ONLY || lv.id === ONLY; });
+const levels = LL.LEVELS.filter(function (lv) {
+  if (ONLY) return lv.id === ONLY;
+  /* --from / --to：一次只标定一批新关卡，不用每次跑完 50 关 */
+  if (FROM && lv.id < FROM) return false;
+  if (TO && lv.id > TO) return false;
+  return true;
+});
 console.log('每关模拟 ' + RUNS + ' 局（贪心玩家），共 ' + levels.length + ' 关\n');
 console.log('关卡  名称        颜色 步数 目标                        胜率   平均剩余步  得分P20/P55/P85        建议二星/三星');
 
