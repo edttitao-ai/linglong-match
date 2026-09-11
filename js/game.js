@@ -65,6 +65,19 @@
       this.collected = {};
       this.obstCleared = 0;
       this.obstTotal = level.clearTotal || 0;
+
+      /* 开局道具：装填的在本局开始时消耗并立即生效 */
+      this.boostersUsed = [];
+      const boosters = LL.Progress.armedList();
+      for (let i = 0; i < boosters.length; i++) {
+        const id = boosters[i];
+        if (!LL.Progress.useBooster(id)) continue;
+        this.boostersUsed.push(id);
+        if (id === 'moves') this.movesLeft += CFG.BOOSTERS.moves.amount;
+        else if (id === 'wind') this.placeStartingWind(this.board);
+        else if (id === 'shuffle') B.shuffleBoard(this.board);
+      }
+
       this.selected = null;
       this.hover = null;
       this.hint = null;
@@ -79,7 +92,11 @@
       LL.HUD.updateObjectives(this.progressList());
       this.state = 'intro';
       this.introT = 1500;
-      LL.HUD.banner(I18N.levelTitle(level), this.objectiveSummary(), 1700);
+      LL.HUD.banner(
+        I18N.levelTitle(level),
+        this.objectiveSummary() + this.boosterNote(),
+        1700
+      );
       LL.UI.showScreen('game');
     },
 
@@ -201,11 +218,43 @@
 
     applyClear(ev) {
       this.score += ev.score;
+      /* 顺手统计每日任务需要的量：消除色块 / 破障 / 引爆 / 连锁 */
+      const qev = { collected: {}, obstaclesBroken: 0, specialsFired: (ev.fires || []).length, cascade: ev.cascade || 0 };
       for (let i = 0; i < ev.cells.length; i++) {
         const t = ev.cells[i].t;
-        if (t >= 0) this.collected[t] = (this.collected[t] || 0) + 1;
+        if (t >= 0) {
+          this.collected[t] = (this.collected[t] || 0) + 1;
+          qev.collected[t] = (qev.collected[t] || 0) + 1;
+        }
       }
-      for (let i = 0; i < ev.obstacles.length; i++) if (ev.obstacles[i].broken) this.obstCleared++;
+      for (let i = 0; i < ev.obstacles.length; i++) {
+        if (ev.obstacles[i].broken) { this.obstCleared++; qev.obstaclesBroken++; }
+      }
+      if (ev.cascade > (this.maxCascade || 0)) this.maxCascade = ev.cascade;
+      LL.Progress.addQuestProgress(qev);
+    },
+
+    /* 开局道具的横幅提示文案 */
+    boosterNote() {
+      if (!this.boostersUsed || !this.boostersUsed.length) return '';
+      const self = this;
+      const names = this.boostersUsed.map(function (id) { return I18N.t('boost_' + id); });
+      return '　·　' + I18N.t('boostUsed') + ' ' + names.join('、');
+    },
+
+    /* 风符：落在盘心，颜色取不会立刻形成三连的一种（落点可预期，避免「道具白瞎」） */
+    placeStartingWind(board) {
+      const S = CFG.SPECIAL;
+      const r = (board.R / 2) | 0, c = (board.C / 2) | 0;
+      for (let t = 0; t < board.colors; t++) {
+        board.cells[r][c] = B.tile(t, 0);
+        if (B.findMatches(board).length === 0) {
+          board.cells[r][c] = B.tile(t, S.WIND_H);
+          return { r: r, c: c };
+        }
+      }
+      board.cells[r][c] = B.tile(0, S.WIND_H);
+      return { r: r, c: c };
     },
 
     /* 特效与音效编排 */
@@ -371,8 +420,14 @@
       }
       LL.Progress.save();
 
+      /* 每日任务：通关 / 星级 / 未续步通关 */
+      const questsBefore = LL.Progress.questState().claimable;
+      LL.Progress.addQuestProgress({ win: true, stars: stars, revived: (this.reviveUsed || 0) > 0 });
+      const questsAfter = LL.Progress.questState().claimable;
+
       this.lastResult = {
         win: true, score: this.score, stars: stars,
+        questsNew: Math.max(0, questsAfter - questsBefore),
         level: this.level, levelIndex: this.levelIndex,
         daily: isDaily, dailyFirst: dailyFirst,
         newBest: isDaily ? dailyNewBest : rec.newBest,

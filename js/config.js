@@ -85,8 +85,34 @@
     /* 连续登录：7 天一个循环，第 7 天奖励约等于常规日的 3 倍（目标梯度）
      * 断签不立刻归零——漏 1 天原地暂停、漏 2 天才重来（铁律反而赶人） */
     STREAK: {
-      REWARDS: [20, 30, 40, 50, 60, 80, 150],
+      /* 第 7 天 = 150 金币 + 三件套各 1，约等于常规日的 3 倍（目标梯度） */
+      REWARDS: [
+        { coins: 20 },
+        { booster: 'moves' },
+        { coins: 40 },
+        { booster: 'wind' },
+        { coins: 60 },
+        { booster: 'shuffle' },
+        { coins: 150, boosters: ['moves', 'wind', 'shuffle'] }
+      ],
       TOTAL_MILESTONES: { 7: 100, 30: 300, 100: 800 }   // 永不重置的累计轨道
+    },
+
+    /* 开局道具：满配三件合计约 4~5 步，控制在第四章步数的 15%~25%——
+     * 超过 30% 关卡设计就失去意义（见 README「留存系统」）。 */
+    BOOSTERS: {
+      order: ['moves', 'wind', 'shuffle'],
+      moves: { cost: 80, amount: 3, icon: 'ui_boost_moves' },
+      wind: { cost: 120, icon: 'ui_boost_wind' },
+      shuffle: { cost: 60, icon: 'ui_boost_shuffle' }
+    },
+
+    /* 每日任务：3 条，易/中/难各一；三条合计应在 15~25 分钟内可清完 */
+    QUESTS: {
+      count: 3,
+      reward: { easy: 20, medium: 28, hard: 35 },
+      allDoneBonus: 60,
+      rerolls: 1
     },
 
     STORAGE_KEY: 'linglong.progress.v1',

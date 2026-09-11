@@ -85,15 +85,19 @@
             <span data-i18n="dailyTitle">每日挑战</span>
             <i class="dot hidden" id="dailyDot"></i>
           </button>
+          <button id="btnQuests" class="ghost">
+            <span data-i18n="questTitle">每日任务</span>
+            <i class="dot hidden" id="questDot"></i>
+          </button>
+        </div>
+        <div class="btn-row">
           <button id="btnCheckin" class="ghost">
             <span data-i18n="checkinShort">签到</span>
             <i class="dot hidden" id="checkinDot"></i>
           </button>
-        </div>
-        <div class="btn-row">
           <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
-          <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
         </div>
+        <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
       </div>
       <div class="title-hint" data-i18n="titleHint">点击或拖动相邻两块交换，凑齐三连即可消除</div>
     </div>
@@ -115,6 +119,11 @@
         <div class="star-total" id="mapStars"></div>
       </div>
       <img class="cloud-rule map-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="boost-bar" id="boostBar">
+        <div class="boost-title" data-i18n="boostTitle">开局道具</div>
+        <div class="boost-slots" id="boostSlots"></div>
+        <div class="boost-note hidden" id="boostNote"></div>
+      </div>
       <div class="map-grid" id="mapGrid"></div>
       <div class="roller bottom"></div>
     </div>
@@ -201,6 +210,20 @@
     </div>
   </div>
 
+  <!-- 每日任务 -->
+  <div id="quests" class="overlay hidden">
+    <div class="panel quest-panel">
+      <h2 data-i18n="questTitle">每日任务</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="quest-rows" id="questRows"></div>
+      <div class="quest-bonus" id="questBonus"></div>
+      <div class="btn-col">
+        <button id="btnQuestAll" class="primary hidden">一键领取</button>
+        <button id="btnQuestsClose" class="ghost" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 连续签到 -->
   <div id="checkin" class="overlay hidden">
     <div class="panel checkin-panel">
@@ -255,6 +278,7 @@
 <script src="js/resolver.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/daily.js"></script>
+<script src="js/quests.js"></script>
 <script src="js/anim.js"></script>
 <script src="js/render.js"></script>
 <script src="js/hud.js"></script>

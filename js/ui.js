@@ -56,7 +56,14 @@
         streakTotal: $('#streakTotal'),
         claimNote: $('#claimNote'),
         btnClaim: $('#btnClaim'),
-        checkinDot: $('#checkinDot')
+        checkinDot: $('#checkinDot'),
+        quests: $('#quests'),
+        questRows: $('#questRows'),
+        questBonus: $('#questBonus'),
+        btnQuestAll: $('#btnQuestAll'),
+        questDot: $('#questDot'),
+        boostSlots: $('#boostSlots'),
+        boostNote: $('#boostNote')
       };
 
       /* 标题页 */
@@ -76,6 +83,11 @@
         self.hideDaily();
         LL.Game.startDaily();
       });
+      /* 每日任务 */
+      U.on($('#btnQuests'), 'click', function () { LL.Audio.play('click'); self.showQuests(); });
+      U.on($('#btnQuestsClose'), 'click', function () { LL.Audio.play('click'); self.hideQuests(); });
+      U.on($('#btnQuestAll'), 'click', function () { self.claimAllQuests(); });
+
       U.on($('#btnCheckin'), 'click', function () { LL.Audio.play('click'); self.showCheckin(); });
       U.on($('#btnCheckinClose'), 'click', function () { LL.Audio.play('click'); self.hideCheckin(); });
       U.on($('#btnClaim'), 'click', function () { self.claimStreak(); });
@@ -164,9 +176,10 @@
       if (name !== 'game' && name !== 'settings') U.show(this.els.settings, false);
       U.show(this.els.hud, name === 'game');
       if (name === 'game') LL.HUD.hideBanner();
-      if (name === 'map') this.buildMap();
+      if (name === 'map') { this.buildMap(); this.buildBoostBar(); }
       if (name !== 'daily') U.show(this.els.daily, false);
       if (name !== 'checkin') U.show(this.els.checkin, false);
+      if (name !== 'quests') U.show(this.els.quests, false);
       this.updateCoins();
       this.updateBadges();
       /* 信息栏的显隐会改变棋盘可用区域，必须重新排版画布 */
@@ -189,6 +202,7 @@
       LL.HUD.hideBanner();
       U.show(this.els.hud, false);
       this.showScreen('map');
+      this.buildBoostBar();
     },
 
     /* ---------- 关卡地图 ---------- */
@@ -250,6 +264,164 @@
         const b = pill.querySelector('b');
         if (b) b.textContent = U.fmt(n);
       });
+    },
+
+    /* ---------- 每日任务 ---------- */
+
+    showQuests() {
+      this.buildQuests();
+      U.show(this.els.quests, true);
+    },
+
+    hideQuests() { U.show(this.els.quests, false); },
+
+    buildQuests() {
+      const P = LL.Progress;
+      const st = P.questState();
+      const rows = this.els.questRows;
+      if (!rows) return;
+      const self = this;
+      rows.innerHTML = '';
+      st.list.forEach(function (q, i) {
+        const cur = st.progress[i] || 0;
+        const done = st.done[i], claimed = st.claimed[i];
+        const row = U.el('div', 'quest-row' + (done ? ' done' : '') + (claimed ? ' claimed' : ''));
+        const head = U.el('div', 'q-head');
+        head.appendChild(U.el('span', 'q-name', LL.Quests.describe(q, I18N)));
+        head.appendChild(U.el('span', 'q-reward', '+' + (LL.CFG.QUESTS.reward[q.tier] || 20)));
+        row.appendChild(head);
+
+        const bar = U.el('div', 'q-bar');
+        const fill = U.el('i');
+        fill.style.width = (q.target ? Math.min(100, cur / q.target * 100) : 0).toFixed(0) + '%';
+        if (done) fill.className = 'full';
+        bar.appendChild(fill);
+        row.appendChild(bar);
+
+        const foot = U.el('div', 'q-foot');
+        foot.appendChild(U.el('span', 'q-prog', LL.Quests.progressText(q, cur, I18N)));
+        if (claimed) {
+          foot.appendChild(U.el('span', 'q-state ok', I18N.t('questClaimed')));
+        } else if (done) {
+          const btn = U.el('button', 'q-claim', I18N.t('questClaim'));
+          btn.type = 'button';
+          btn.addEventListener('click', function () { self.claimQuest(i); });
+          foot.appendChild(btn);
+        } else {
+          const rb = U.el('button', 'q-reroll', I18N.t('questReroll'));
+          rb.type = 'button';
+          rb.disabled = st.rerolls <= 0;
+          rb.classList.toggle('disabled', st.rerolls <= 0);
+          rb.addEventListener('click', function () { self.rerollQuest(i); });
+          foot.appendChild(rb);
+        }
+        row.appendChild(foot);
+        rows.appendChild(row);
+      });
+
+      this.els.questBonus.textContent = I18N.t('questBonus') + ' +' + LL.CFG.QUESTS.allDoneBonus +
+        (st.bonusClaimed ? '　·　' + I18N.t('questClaimed') : '') +
+        (st.rerolls > 0 ? '　·　' + I18N.t('questReroll') + ' ×' + st.rerolls : '');
+      const anyClaimable = st.claimable > 0 || st.bonusClaimable;
+      U.show(this.els.btnQuestAll, anyClaimable);
+      this.els.btnQuestAll.textContent = I18N.t('questAll');
+    },
+
+    claimQuest(i) {
+      const got = LL.Progress.claimQuest(i);
+      if (got) {
+        LL.Audio.play('star', { rate: 1.06, vol: 0.85 });
+        this.updateCoins();
+      }
+      this.buildQuests();
+      this.updateBadges();
+    },
+
+    claimAllQuests() {
+      const st = LL.Progress.questState();
+      let total = 0;
+      st.list.forEach(function (q, i) {
+        const r = LL.Progress.claimQuest(i);
+        if (r) total += r.coins;
+      });
+      const b = LL.Progress.claimQuestBonus();
+      if (b) total += b.coins;
+      if (total > 0) {
+        LL.Audio.play('star', { rate: 1.06, vol: 0.9 });
+        this.updateCoins();
+      }
+      this.buildQuests();
+      this.updateBadges();
+    },
+
+    rerollQuest(i) {
+      const q = LL.Progress.rerollQuest(i);
+      if (q) LL.Audio.play('click', { rate: 1.05 });
+      else LL.Audio.play('invalid');
+      this.buildQuests();
+      this.updateBadges();
+    },
+
+    /* ---------- 开局道具 ---------- */
+
+    buildBoostBar() {
+      const slots = this.els.boostSlots;
+      if (!slots) return;
+      const P = LL.Progress;
+      const self = this;
+      slots.innerHTML = '';
+      LL.CFG.BOOSTERS.order.forEach(function (id) {
+        const info = LL.CFG.BOOSTERS[id];
+        const count = P.boosterCount(id);
+        const armed = !!(P.data.armed && P.data.armed[id]) && count > 0;
+        const slot = U.el('button',
+          'boost-slot' + (armed ? ' armed' : '') + (count > 0 ? '' : ' empty'));
+        slot.type = 'button';
+        slot.innerHTML =
+          '<img src="' + LL.Assets.path(info.icon) + '" alt="">' +
+          '<span class="b-name">' + I18N.t('boost_' + id) + '</span>' +
+          '<span class="b-count">' + (count > 0 ? '×' + count : I18N.t('boostBuyShort')) + '</span>';
+        slot.title = count > 0 ? I18N.t('boostStock', { n: count }) : I18N.t('boostEmpty');
+        slot.addEventListener('click', function () { self.onBoosterTap(id); });
+        slots.appendChild(slot);
+      });
+    },
+
+    onBoosterTap(id) {
+      const P = LL.Progress;
+      const info = LL.CFG.BOOSTERS[id];
+      const count = P.boosterCount(id);
+      if (count <= 0) {
+        if (P.data.coins < info.cost) {
+          LL.Audio.play('invalid');
+          this.boostNote(I18N.t('boostNotEnough', { n: U.fmt(info.cost - P.data.coins) }));
+          return;
+        }
+        const self = this;
+        LL.Audio.play('click');
+        this.confirm(I18N.t('boostBuyAsk', { n: U.fmt(info.cost), name: I18N.t('boost_' + id) }), function () {
+          const r = P.buyBooster(id);
+          if (r) {
+            LL.Audio.play('star', { rate: 1.15, vol: 0.8 });
+            self.buildBoostBar();
+            self.updateCoins();
+          }
+        });
+        return;
+      }
+      const on = !(P.data.armed && P.data.armed[id]);
+      P.armBooster(id, on);
+      LL.Audio.play('click', { rate: on ? 1.12 : 0.92 });
+      this.buildBoostBar();
+    },
+
+    boostNote(text) {
+      const el = this.els.boostNote;
+      if (!el) return;
+      el.textContent = text;
+      U.show(el, true);
+      clearTimeout(this._boostNoteTimer);
+      this._boostNoteTimer = setTimeout(function () { U.show(el, false); }, 2200);
     },
 
     /* ---------- 每日挑战 ---------- */
@@ -368,6 +540,8 @@
       const st = P.streakStatus();
       U.show(this.els.checkinDot, !st.claimed);
       U.show(this.els.dailyDot, P.dailyStars(P.todayKey()) === 0);
+      const qs = P.questState();
+      U.show(this.els.questDot, qs.claimable > 0 || qs.bonusClaimable);
     },
 
     /* ---------- 失败救援（续步） ---------- */

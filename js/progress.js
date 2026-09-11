@@ -11,7 +11,10 @@
     day: { key: '', earned: 0 },   // 当日金币产出（受上限约束）
     revive: {},                     // 每关累计使用过的续步次数
     streak: { count: 0, lastDay: '', best: 0, total: 0 },
-    daily: { cleared: {}, best: 0, plays: 0 }
+    daily: { cleared: {}, best: 0, plays: 0 },
+    quests: { day: '', list: [], progress: [], claimed: [], rerolls: 0, bonusClaimed: false },
+    boosters: { moves: 0, wind: 0, shuffle: 0 },
+    armed: { moves: false, wind: false, shuffle: false }
   };
   const DEFAULT_SET = { volume: 0.8, muted: false, lang: 'zh' };
 
@@ -141,9 +144,13 @@
       if (st.claimed) return null;
       const s = this.data.streak;
       const idx = st.dayIndex;
-      const coins = CFG.STREAK.REWARDS[idx - 1] || 0;
+      const reward = CFG.STREAK.REWARDS[idx - 1] || {};
+      const coins = reward.coins || 0;
       /* 签到奖励由时间节流，不占每日产出上限 */
       const got = this.addCoins(coins, false);
+      const items = [];
+      if (reward.booster) { this.addBooster(reward.booster, 1); items.push(reward.booster); }
+      (reward.boosters || []).forEach(function (id) { this.addBooster(id, 1); items.push(id); }, this);
       s.count = idx;
       s.lastDay = this.todayKey();
       s.total = (s.total || 0) + 1;
@@ -155,7 +162,7 @@
       }
       if (bonus > 0) this.addCoins(bonus, false);
       this.save();
-      return { dayIndex: idx, coins: got.added, milestone: bonus, total: s.total, best: s.best };
+      return { dayIndex: idx, coins: got.added, boosters: items, milestone: bonus, total: s.total, best: s.best };
     },
 
     /* ---------------- 每日挑战 ---------------- */
@@ -183,6 +190,124 @@
         out.push({ dayKey: key, day: d, stars: this.dailyStars(key) });
       }
       return out;
+    },
+
+    /* ---------------- 每日任务 ---------------- */
+
+    /* 跨天重排任务；同一天重新打开还是同一组 */
+    ensureQuests() {
+      const today = this.ensureDay();
+      const q = this.data.quests;
+      if (q.day === today && q.list && q.list.length) return q;
+      q.day = today;
+      q.list = LL.Quests.generate(today, 0);
+      q.progress = q.list.map(function () { return 0; });
+      q.claimed = q.list.map(function () { return false; });
+      q.rerolls = CFG.QUESTS.rerolls;
+      q.bonusClaimed = false;
+      this.save();
+      return q;
+    },
+
+    questState() {
+      const q = this.ensureQuests();
+      const done = q.list.map(function (item, i) { return q.progress[i] >= item.target; });
+      const allClaimed = q.claimed.every(function (v) { return v; });
+      return {
+        day: q.day, list: q.list, progress: q.progress, claimed: q.claimed,
+        done: done, rerolls: q.rerolls, bonusClaimed: q.bonusClaimed,
+        allDone: done.every(Boolean), allClaimed: allClaimed,
+        claimable: done.filter(function (v, i) { return v && !q.claimed[i]; }).length,
+        bonusClaimable: done.every(Boolean) && !q.bonusClaimed
+      };
+    },
+
+    /* 进度累加（只作用于未领取的任务） */
+    addQuestProgress(ev) {
+      const q = this.ensureQuests();
+      let changed = false;
+      for (let i = 0; i < q.list.length; i++) {
+        if (q.claimed[i]) continue;
+        const cur = q.progress[i] || 0;
+        if (cur >= q.list[i].target) continue;
+        const next = LL.Quests.apply(cur, q.list[i], ev);
+        if (next !== cur) { q.progress[i] = next; changed = true; }
+      }
+      if (changed) this.save();
+      return changed;
+    },
+
+    /* 领取单条任务奖励；返回 { coins } 或 null */
+    claimQuest(i) {
+      const q = this.ensureQuests();
+      if (q.claimed[i] || (q.progress[i] || 0) < q.list[i].target) return null;
+      q.claimed[i] = true;
+      const coins = CFG.QUESTS.reward[q.list[i].tier] || 20;
+      this.addCoins(coins, false);          /* 任务按天节流，不占每日产出上限 */
+      this.save();
+      return { coins: coins };
+    },
+
+    /* 全部完成后的额外奖励 */
+    claimQuestBonus() {
+      const q = this.ensureQuests();
+      const st = this.questState();
+      if (!st.bonusClaimable) return null;
+      q.bonusClaimed = true;
+      this.addCoins(CFG.QUESTS.allDoneBonus, false);
+      this.save();
+      return { coins: CFG.QUESTS.allDoneBonus };
+    },
+
+    /* 换一条同难度的其他任务（每天限次） */
+    rerollQuest(i) {
+      const q = this.ensureQuests();
+      if (q.rerolls <= 0 || q.claimed[i]) return null;
+      const old = q.list[i];
+      if ((q.progress[i] || 0) >= old.target) return null;   /* 已完成的不能换 */
+      q.list[i] = LL.Quests.reroll(old, q.day, i);
+      q.progress[i] = 0;
+      q.rerolls--;
+      this.save();
+      return q.list[i];
+    },
+
+    /* ---------------- 开局道具 ---------------- */
+
+    boosterCount(id) { return (this.data.boosters && this.data.boosters[id]) || 0; },
+    addBooster(id, n) {
+      const b = this.data.boosters || (this.data.boosters = {});
+      b[id] = (b[id] || 0) + (n || 1);
+      this.save();
+      return b[id];
+    },
+    useBooster(id) {
+      const b = this.data.boosters || {};
+      if (!b[id] || b[id] <= 0) return false;
+      b[id]--;
+      if (b[id] === 0 && this.data.armed) this.data.armed[id] = false;
+      this.save();
+      return true;
+    },
+    /* 直接花金币买一件（买完自动装填） */
+    buyBooster(id) {
+      const info = CFG.BOOSTERS[id];
+      if (!info || this.data.coins < info.cost) return null;
+      this.spendCoins(info.cost);
+      this.addBooster(id, 1);
+      this.armBooster(id, true);
+      return { coins: info.cost, count: this.boosterCount(id) };
+    },
+    armedList() {
+      const a = this.data.armed || {};
+      const self = this;
+      return CFG.BOOSTERS.order.filter(function (id) { return a[id] && self.boosterCount(id) > 0; });
+    },
+    armBooster(id, on) {
+      const a = this.data.armed || (this.data.armed = {});
+      a[id] = !!on && this.boosterCount(id) > 0;
+      this.save();
+      return a[id];
     },
 
     /* ---------------- 续步（救援） ---------------- */

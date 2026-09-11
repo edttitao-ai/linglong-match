@@ -341,6 +341,37 @@ function iconCoin() {
 `;
 }
 
+/* 开局道具图标：加步（双箭头）· 风符（迷你风纹）· 重排（循环箭头） */
+function iconBoost(kind) {
+  if (kind === 'moves') {
+    return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M3 12 l6.5 -7.5 v15 z" fill="${INK}" stroke="${INK}" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M11 12 l6.5 -7.5 v15 z" fill="${GOLD}" stroke="#8A5F18" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M19.5 12 h2.5" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round"/>
+</svg>
+`;
+  }
+  if (kind === 'wind') {
+    return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="10" fill="none" stroke="${GOLD}" stroke-width="1.8"/>
+  <path d="M5.5 12 H18.5" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M5.5 12 l3.6 -3 v6 z" fill="${INK}"/>
+  <path d="M18.5 12 l-3.6 -3 v6 z" fill="${INK}"/>
+  <circle cx="12" cy="12" r="1.8" fill="${GOLD}"/>
+</svg>
+`;
+  }
+  return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <g fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 9.5 a7.5 7.5 0 0 1 12.5 -2.5"/>
+    <path d="M17.5 3.5 V8 h-4.5"/>
+    <path d="M19 14.5 a7.5 7.5 0 0 1 -12.5 2.5"/>
+    <path d="M6.5 20.5 V16 h4.5"/>
+  </g>
+</svg>
+`;
+}
+
 function iconBack() {
   return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
   <path d="M14.4 4.2 L6.2 12 L14.4 19.8" fill="none" stroke="${INK}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -495,6 +526,9 @@ const files = {
   'ui_star_off.svg': star(false),
   'ui_lock.svg': lock(),
   'ui_coin.svg': iconCoin(),
+  'ui_boost_moves.svg': iconBoost('moves'),
+  'ui_boost_wind.svg': iconBoost('wind'),
+  'ui_boost_shuffle.svg': iconBoost('shuffle'),
   'ui_pause.svg': iconPause(),
   'ui_sound.svg': iconSound(false),
   'ui_mute.svg': iconSound(true),

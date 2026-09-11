@@ -71,6 +71,38 @@
     dailyBest: '最佳 {n} 分',
     dailyMonthDone: '本月通关 {n} 天',
 
+    /* 每日任务 */
+    questTitle: '每日任务',
+    quest_winLevels: '通过 {n} 关',
+    quest_collectColor: '收集{name} {n} 个',
+    quest_breakObstacles: '破除 {n} 个障碍',
+    quest_cascade: '打出一次 {n} 连锁',
+    quest_fireSpecials: '引爆特殊块 {n} 次',
+    quest_stars: '获得 {n} 颗星',
+    quest_noReviveWins: '不使用续步通关 {n} 次',
+    questReroll: '换一个',
+    questClaim: '领取',
+    questClaimed: '已领取',
+    questDone: '可领取',
+    questBonus: '全部完成额外奖励',
+    questAll: '一键领取',
+    questNoReroll: '今日换牌已用完',
+    questNew: '有任务可领取',
+    questGot: '任务奖励 +{n} 金币',
+
+    /* 开局道具 */
+    boostTitle: '开局道具',
+    boost_moves: '+3 步',
+    boost_wind: '风符',
+    boost_shuffle: '重排',
+    boostUsed: '本局生效',
+    boostHint: '点击装填，开局自动生效；同类只能带 1 件',
+    boostEmpty: '没有库存 · 点击购买',
+    boostBuyAsk: '花 {n} 金币购买「{name}」并装填？',
+    boostNotEnough: '金币不足（还差 {n}）',
+    boostStock: '库存 ×{n}',
+    boostBuyShort: '购买',
+
     /* 连续签到 */
     checkinTitle: '连续签到',
     checkinShort: '签到',
