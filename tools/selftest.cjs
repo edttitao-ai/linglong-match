@@ -16,9 +16,14 @@
 const path = require('path');
 
 /* 以 CommonJS 方式加载浏览器脚本（它们挂在 globalThis.LL 上） */
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js'].forEach(function (f) {
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js',
+  'i18n.js', 'progress.js', 'quests.js', 'daily.js', 'modes.js', 'achievements.js',
+  'anim.js', 'assets.js', 'audio.js', 'render.js', 'hud.js', 'input.js', 'game.js', 'ui.js'].forEach(function (f) {
   require(path.join(__dirname, '..', 'js', f));
 });
+/* 说明：上面这些文件在 Node 下只会定义对象，不会碰 DOM（DOM 访问都在函数体内），
+ * 因此可以安全加载，用来做「引用的方法是否存在」这类静态检查。
+ * main.js 会立即执行 boot()，故意不加载。 */
 const LL = globalThis.LL;
 const CFG = LL.CFG, U = LL.U, B = LL.Board, SP = LL.Special, R = LL.Resolver;
 const S = CFG.SPECIAL, O = CFG.OBST;
@@ -449,6 +454,76 @@ section('7. 关卡数据合法性');
   let obstCount = 0;
   for (let r = 0; r < b.R; r++) for (let c = 0; c < b.C; c++) if (b.obst[r][c]) obstCount++;
   eq(obstCount, LL.LEVELS[14].clearTotal, '第 15 关障碍数与 clearTotal 一致');
+}
+
+/* ---------- 8. 模块 API 完整性 ---------- */
+section('8. 模块 API 完整性（源码引用的方法必须存在）');
+{
+  /* 起因：一次编辑用「暂停方法」所在段落当替换锚点，却没把方法写回去，
+   * 于是 LL.UI.showPause 消失 —— 点暂停会把状态置为 paused 却弹不出面板，界面卡死。
+   * 这类问题语法检查抓不到，所以在这里静态扫一遍所有 LL.X.y( 引用。 */
+  const fsMod = require('fs');
+  const dir = path.join(__dirname, '..', 'js');
+  const missing = [];
+  fsMod.readdirSync(dir).forEach(function (file) {
+    if (file === 'main.js') return;
+    const src = fsMod.readFileSync(path.join(dir, file), 'utf8');
+    const re = /LL\.([A-Z][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
+    let m;
+    while ((m = re.exec(src))) {
+      const mod = LL[m[1]];
+      if (!mod) { missing.push(file + ': LL.' + m[1] + ' 模块不存在'); continue; }
+      if (typeof mod[m[2]] !== 'function') missing.push(file + ': LL.' + m[1] + '.' + m[2] + ' 不存在');
+    }
+  });
+  const uniq = Array.from(new Set(missing));
+  eq(uniq.length, 0, '源码引用的模块方法都存在' + (uniq.length ? '：' + uniq.slice(0, 6).join(' ｜ ') : ''));
+
+  /* 上面那种扫描只看「调用点」，抓不到「方法被删、调用它的地方也一起没了」。
+   * 所以再列一份显式契约：这些方法必须存在（删掉或改名都会在这里报出来）。
+   * 新增方法不用维护这份表，只有删除/改名才会触发失败。 */
+  const REQUIRED = {
+    UI: ['init', 'showScreen', 'hideOverlays', 'toTitle', 'toMap', 'showResult', 'hideResult',
+      'showPause', 'hidePause', 'togglePause', 'showSettings', 'hideSettings', 'confirm',
+      'applySettings', 'applyLang', 'setLoadProgress', 'updateCoins', 'updateBadges',
+      'showRevive', 'hideRevive', 'refreshReviveCost', 'showDaily', 'hideDaily', 'buildDaily',
+      'showCheckin', 'hideCheckin', 'buildCheckin', 'claimStreak', 'streakRewardLabel',
+      'showQuests', 'hideQuests', 'buildQuests', 'claimQuest', 'claimAllQuests', 'rerollQuest',
+      'buildBoostBar', 'onBoosterTap', 'boostNote', 'showTab', 'buildEndlessPane', 'buildTimedPane',
+      'buildAchievementsPane', 'buildMap', 'updateSoundBtn', 'syncSettingsUI'],
+    HUD: ['init', 'setup', 'setScore', 'setMoves', 'setTimeLeft', 'updateObjectives', 'banner', 'hideBanner'],
+    Game: ['init', 'startLevel', 'startDaily', 'startEndless', 'startTimed', 'start', 'restart',
+      'restartRun', 'nextLevel', 'update', 'draw', 'view', 'canInput', 'setSelected', 'setHover',
+      'notifyInput', 'attemptSwap', 'pause', 'resume', 'togglePause', 'revive', 'declineRevive',
+      'reviveOffer', 'progressRatio', 'progressList', 'objectivesDone', 'starsFor', 'applyClear',
+      'finishTurn', 'finishTurnInner', 'endlessAdvance', 'runOver', 'win', 'lose',
+      'placeStartingWind', 'boosterNote'],
+    Progress: ['save', 'starsOf', 'bestOf', 'isUnlocked', 'totalStars', 'record', 'resetAll',
+      'continueLevel', 'todayKey', 'ensureDay', 'coinsLeftToday', 'addCoins', 'spendCoins',
+      'reviveCountOf', 'addRevive', 'streakStatus', 'claimStreak', 'dailyStars', 'recordDaily',
+      'dailyMonth', 'ensureQuests', 'questState', 'addQuestProgress', 'claimQuest', 'claimQuestBonus',
+      'rerollQuest', 'boosterCount', 'addBooster', 'useBooster', 'buyBooster', 'armedList', 'armBooster',
+      'weekKey', 'recordEndless', 'recordTimed', 'bumpStat', 'setStatMax', 'checkAchievements',
+      'achievementOf', 'achievementCount'],
+    Board: ['create', 'canSwap', 'swapTiles', 'findMatches', 'matchThrough', 'findAllMoves',
+      'hasValidMove', 'applyClear', 'applyGravity', 'shuffleBoard'],
+    Special: ['decideSpecialFor', 'pickSpawnCell', 'blastCells', 'expandClear', 'planMatches',
+      'planCombo', 'buildComboClear'],
+    Resolver: ['create', 'beginTurn', 'step', 'runTurn', 'shuffle'],
+    Daily: ['build', 'hash', 'buildLayout'],
+    Quests: ['generate', 'reroll', 'describe', 'progressText', 'apply'],
+    Modes: ['endlessLevel', 'timedLevel', 'timedCoins', 'endlessCoins'],
+    Achievements: ['context', 'newlyUnlocked', 'scrollTier', 'nextScrollGoal']
+  };
+  const badApi = [];
+  Object.keys(REQUIRED).forEach(function (mod) {
+    const target = LL[mod];
+    if (!target) { badApi.push(mod + ' 模块不存在'); return; }
+    REQUIRED[mod].forEach(function (m) {
+      if (typeof target[m] !== 'function') badApi.push(mod + '.' + m);
+    });
+  });
+  eq(badApi.length, 0, '模块契约方法齐全' + (badApi.length ? '，缺失：' + badApi.slice(0, 8).join(' ｜ ') : ''));
 }
 
 /* ---------- 汇总 ---------- */

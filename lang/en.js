@@ -148,6 +148,7 @@
     boostNotEnough: 'Not enough coins ({n} short)',
     boostStock: 'Stock ×{n}',
     boostBuyShort: 'Buy',
+    boostBundle: 'Boosters ×{n}',
 
     checkinTitle: 'Daily Check-in',
     checkinShort: 'Check in',

@@ -381,6 +381,16 @@
       }).join('');
     },
 
+    /* ---------- 暂停 ---------- */
+
+    showPause() { U.show(this.els.pause, true); },
+    hidePause() { U.show(this.els.pause, false); },
+
+    togglePause() {
+      if (LL.Game.state === 'paused') LL.Game.resume();
+      else LL.Game.pause();
+    },
+
     /* ---------- 每日任务 ---------- */
 
     showQuests() {
@@ -606,6 +616,17 @@
 
     hideCheckin() { U.show(this.els.checkin, false); },
 
+    /* 签到奖励现在是「金币 + 道具」的混合结构，不能直接当数字格式化（会变成 +NaN） */
+    streakRewardLabel(reward) {
+      if (!reward) return '';
+      if (typeof reward === 'number') return '+' + U.fmt(reward);
+      const parts = [];
+      if (reward.coins) parts.push('+' + U.fmt(reward.coins));
+      if (reward.booster) parts.push(I18N.t('boost_' + reward.booster));
+      if (reward.boosters && reward.boosters.length) parts.push(I18N.t('boostBundle', { n: reward.boosters.length }));
+      return parts.join('　');
+    },
+
     buildCheckin() {
       const P = LL.Progress;
       const st = P.streakStatus();
@@ -620,7 +641,7 @@
         else state = i <= claimedUpTo ? 'done' : (i === st.dayIndex ? 'today' : 'future');
         const row = U.el('div', 'streak-row ' + state);
         row.appendChild(U.el('span', 's-day', I18N.t('streakDay', { n: i })));
-        row.appendChild(U.el('span', 's-reward', '+' + U.fmt(reward)));
+        row.appendChild(U.el('span', 's-reward', this.streakRewardLabel(reward)));
         row.appendChild(U.el('span', 's-state', I18N.t(
           state === 'done' ? 'streakClaimed' : (state === 'today' ? 'streakToday' : 'streakFuture'))));
         rows.appendChild(row);

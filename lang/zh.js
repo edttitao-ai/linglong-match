@@ -158,6 +158,7 @@
     boostNotEnough: '金币不足（还差 {n}）',
     boostStock: '库存 ×{n}',
     boostBuyShort: '购买',
+    boostBundle: '道具 ×{n}',
 
     /* 连续签到 */
     checkinTitle: '连续签到',
