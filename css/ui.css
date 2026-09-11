@@ -618,6 +618,129 @@
   white-space: nowrap;
 }
 
+/* ================= 每日挑战 / 连续签到 ================= */
+
+.dot {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cinnabar-hi);
+  box-shadow: 0 0 0 2px rgba(255, 253, 246, 0.85);
+}
+
+.ghost { position: relative; }
+
+.daily-panel, .checkin-panel { width: min(368px, 94vw); gap: 10px; }
+
+.daily-state { width: 100%; text-align: center; }
+
+.daily-line {
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.daily-line.done { color: var(--jade); }
+
+.daily-sub { margin-top: 2px; font-size: 12.5px; color: var(--ink-faint); }
+
+.daily-cal {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 253, 246, 0.72);
+  border: 1px solid var(--line-soft);
+}
+
+.cal-w {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-faint);
+  padding-bottom: 2px;
+}
+
+.cal-cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 8px;
+  background: rgba(122, 92, 52, 0.06);
+  font-family: var(--font-num);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  border: 1px solid transparent;
+}
+
+.cal-cell.empty { background: none; }
+.cal-cell.future { opacity: 0.5; }
+.cal-cell.today { border-color: var(--gold); color: var(--ink); }
+.cal-cell.done { background: rgba(201, 162, 39, 0.18); color: var(--gold-lo); }
+
+.cal-stars { display: flex; gap: 2px; }
+.cal-stars s { width: 3px; height: 3px; border-radius: 50%; background: rgba(122, 92, 52, 0.22); }
+.cal-stars s.on { background: var(--gold); }
+
+.daily-note, .streak-total, .claim-note {
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
+.claim-note { color: var(--jade); font-weight: 700; }
+
+.streak-rows {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.streak-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 253, 246, 0.72);
+  border: 1px solid var(--line-soft);
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.streak-row .s-day { font-weight: 700; }
+.streak-row .s-reward { font-family: var(--font-num); font-weight: 700; color: var(--gold-lo); }
+.streak-row .s-state { font-size: 12px; color: var(--ink-faint); min-width: 3.4em; text-align: right; }
+
+.streak-row.done { background: rgba(201, 162, 39, 0.14); }
+.streak-row.done .s-state { color: var(--jade); }
+
+.streak-row.today {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(232, 200, 106, 0.5);
+  background: #FFFDF6;
+  color: var(--ink);
+}
+
+.streak-row.today .s-state { color: var(--cinnabar); font-weight: 700; }
+.streak-row.future { opacity: 0.72; }
+
+/* 标题页的第二排按钮略矮，避免整列过高 */
+.title-wrap .btn-row .ghost { min-height: 44px; font-size: 16px; }
+
 /* ================= 金币与续步 ================= */
 
 .coin-pill {

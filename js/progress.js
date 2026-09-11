@@ -9,7 +9,9 @@
     stars: {}, best: {}, unlocked: 1, plays: 0,
     coins: 0,
     day: { key: '', earned: 0 },   // 当日金币产出（受上限约束）
-    revive: {}                      // 每关累计使用过的续步次数
+    revive: {},                     // 每关累计使用过的续步次数
+    streak: { count: 0, lastDay: '', best: 0, total: 0 },
+    daily: { cleared: {}, best: 0, plays: 0 }
   };
   const DEFAULT_SET = { volume: 0.8, muted: false, lang: 'zh' };
 
@@ -107,6 +109,80 @@
       this.data.coins -= n;
       this.save();
       return true;
+    },
+
+    /* ---------------- 连续登录 ---------------- */
+
+    /* 两个日期键相差几天（用 UTC 计算，避开夏令时） */
+    dayDiff(a, b) {
+      const pa = a.split('-'), pb = b.split('-');
+      const ta = Date.UTC(+pa[0], +pa[1] - 1, +pa[2]);
+      const tb = Date.UTC(+pb[0], +pb[1] - 1, +pb[2]);
+      return Math.round((tb - ta) / 86400000);
+    },
+
+    /* 今天该领第几天？不产生副作用，供 UI 预显示 */
+    streakStatus() {
+      const today = this.ensureDay();
+      const s = this.data.streak;
+      if (!s.lastDay) return { claimed: false, dayIndex: 1, total: s.total || 0, best: s.best || 0 };
+      if (s.lastDay === today) return { claimed: true, dayIndex: s.count, total: s.total || 0, best: s.best || 0 };
+      const gap = this.dayDiff(s.lastDay, today);
+      if (gap < 0) return { claimed: true, dayIndex: s.count, clockBack: true, total: s.total || 0, best: s.best || 0 };
+      let idx;
+      if (gap === 1) idx = (s.count % 7) + 1;         // 连续签到
+      else if (gap === 2) idx = Math.max(1, s.count); // 漏一天：原地暂停
+      else idx = 1;                                    // 断签两天以上：重新开始
+      return { claimed: false, dayIndex: idx, total: s.total || 0, best: s.best || 0, paused: gap === 2 };
+    },
+
+    claimStreak() {
+      const st = this.streakStatus();
+      if (st.claimed) return null;
+      const s = this.data.streak;
+      const idx = st.dayIndex;
+      const coins = CFG.STREAK.REWARDS[idx - 1] || 0;
+      /* 签到奖励由时间节流，不占每日产出上限 */
+      const got = this.addCoins(coins, false);
+      s.count = idx;
+      s.lastDay = this.todayKey();
+      s.total = (s.total || 0) + 1;
+      s.best = Math.max(s.best || 0, idx);
+      let bonus = 0;
+      const ms = CFG.STREAK.TOTAL_MILESTONES;
+      for (const k in ms) {
+        if (Object.prototype.hasOwnProperty.call(ms, k) && s.total === +k) bonus += ms[k];
+      }
+      if (bonus > 0) this.addCoins(bonus, false);
+      this.save();
+      return { dayIndex: idx, coins: got.added, milestone: bonus, total: s.total, best: s.best };
+    },
+
+    /* ---------------- 每日挑战 ---------------- */
+
+    dailyStars(dayKey) { return this.data.daily.cleared[dayKey] || 0; },
+
+    /* 记录一次每日挑战通关；返回 { firstClear, prevStars } */
+    recordDaily(dayKey, stars, score) {
+      const d = this.data.daily;
+      const prevStars = d.cleared[dayKey] || 0;
+      const firstClear = prevStars === 0;
+      if (stars > prevStars) d.cleared[dayKey] = stars;
+      d.best = Math.max(d.best || 0, score);
+      d.plays = (d.plays || 0) + 1;
+      this.save();
+      return { firstClear: firstClear, prevStars: prevStars };
+    },
+
+    /* 本月完成情况：返回 [{ dayKey, day, stars }] */
+    dailyMonth(year, month) {
+      const out = [];
+      const days = new Date(year, month, 0).getDate();
+      for (let d = 1; d <= days; d++) {
+        const key = year + '-' + (month < 10 ? '0' : '') + month + '-' + (d < 10 ? '0' : '') + d;
+        out.push({ dayKey: key, day: d, stars: this.dailyStars(key) });
+      }
+      return out;
     },
 
     /* ---------------- 续步（救援） ---------------- */

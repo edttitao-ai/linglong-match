@@ -41,6 +41,19 @@
     startLevel(idx) {
       const level = LL.LEVELS[idx];
       if (!level) return;
+      this.start(level, idx);
+    },
+
+    /* 每日挑战：日期种子生成，同一天所有人同一盘；不限尝试次数 */
+    startDaily() {
+      const key = LL.Progress.todayKey();
+      LL.Progress.data.daily.plays = (LL.Progress.data.daily.plays || 0) + 1;
+      LL.Progress.save();
+      this.start(LL.Daily.build(key), -1);
+    },
+
+    start(level, idx) {
+      if (!level) return;
       clearTimeout(this.resultTimer);
       this.level = level;
       this.levelIndex = idx;
@@ -66,18 +79,15 @@
       LL.HUD.updateObjectives(this.progressList());
       this.state = 'intro';
       this.introT = 1500;
-      LL.HUD.banner(
-        I18N.t('levelName', { n: level.id, name: I18N.levelName(level) }),
-        this.objectiveSummary(),
-        1700
-      );
+      LL.HUD.banner(I18N.levelTitle(level), this.objectiveSummary(), 1700);
       LL.UI.showScreen('game');
     },
 
-    restart() { this.startLevel(this.levelIndex); },
+    restart() { if (this.level) this.start(this.level, this.levelIndex); },
 
     nextLevel() {
       const nxt = this.levelIndex + 1;
+      if (this.levelIndex < 0) { LL.UI.toTitle(); return; }   /* 每日挑战没有「下一关」 */
       if (nxt < LL.LEVELS.length) {
         LL.UI.hideOverlays();
         this.startLevel(nxt);
@@ -323,32 +333,55 @@
       LL.Anim.addFlash(0.2);
 
       const stars = this.starsFor(this.score);
-      const prevStars = LL.Progress.starsOf(this.level.id);
-      const starsBefore = LL.Progress.totalStars();
+      const starIdx = Math.max(0, Math.min(2, stars - 1));
+      const isDaily = !!this.level.daily;
+      let coins = 0, milestone = 0, rec = null, prevStars = 0, dailyFirst = false;
+      let dailyNewBest = false, dailyBest = 0;
+      let payout = { added: 0, capped: false };
 
-      /* 金币：首通按星级全额，重玩旧关只按 30% 产出（防止刷旧关） */
-      const base = CFG.ECON.STAR_COINS[Math.max(0, Math.min(2, stars - 1))];
-      const rate = prevStars > 0 ? CFG.ECON.REPLAY_RATE : 1;
-      let coins = Math.round(base * rate);
-
-      const rec = LL.Progress.record(this.level.id, stars, this.score);
-      const starsAfter = LL.Progress.totalStars();
-      const milestone = Math.floor(starsAfter / CFG.ECON.MILESTONE_EVERY) -
-        Math.floor(starsBefore / CFG.ECON.MILESTONE_EVERY);
-      if (milestone > 0) coins += CFG.ECON.MILESTONE_COINS * milestone;
-
-      const payout = LL.Progress.addCoins(coins);
+      if (isDaily) {
+        /* 每日挑战：首通 40 金币，达 2 星再 +30（时间节流，不占每日上限）；
+         * 重复通关按 30% 星级金币计，且占用每日上限 */
+        const prevBest = LL.Progress.data.daily.best || 0;
+        const drec = LL.Progress.recordDaily(this.level.dayKey, stars, this.score);
+        prevStars = drec.prevStars;
+        dailyFirst = drec.firstClear;
+        dailyNewBest = this.score > prevBest;
+        dailyBest = Math.max(prevBest, this.score);
+        if (dailyFirst) {
+          coins = LL.Daily.FIRST_CLEAR_COINS + (stars >= 2 ? LL.Daily.STAR_BONUS_COINS : 0);
+          payout = LL.Progress.addCoins(coins, false);
+        } else {
+          coins = Math.round(CFG.ECON.STAR_COINS[starIdx] * CFG.ECON.REPLAY_RATE);
+          payout = LL.Progress.addCoins(coins);
+        }
+      } else {
+        /* 战役：首通按星级全额，重玩旧关只按 30% 产出（防止刷旧关） */
+        prevStars = LL.Progress.starsOf(this.level.id);
+        const starsBefore = LL.Progress.totalStars();
+        const base = CFG.ECON.STAR_COINS[starIdx];
+        const rate = prevStars > 0 ? CFG.ECON.REPLAY_RATE : 1;
+        coins = Math.round(base * rate);
+        rec = LL.Progress.record(this.level.id, stars, this.score);
+        const starsAfter = LL.Progress.totalStars();
+        milestone = Math.floor(starsAfter / CFG.ECON.MILESTONE_EVERY) -
+          Math.floor(starsBefore / CFG.ECON.MILESTONE_EVERY);
+        if (milestone > 0) coins += CFG.ECON.MILESTONE_COINS * milestone;
+        payout = LL.Progress.addCoins(coins);
+      }
       LL.Progress.save();
 
       this.lastResult = {
         win: true, score: this.score, stars: stars,
         level: this.level, levelIndex: this.levelIndex,
-        newBest: rec.newBest, unlockedNext: rec.unlockedNext,
-        best: LL.Progress.bestOf(this.level.id),
-        isLast: this.levelIndex >= LL.LEVELS.length - 1,
+        daily: isDaily, dailyFirst: dailyFirst,
+        newBest: isDaily ? dailyNewBest : rec.newBest,
+        unlockedNext: rec ? rec.unlockedNext : false,
+        best: isDaily ? dailyBest : LL.Progress.bestOf(this.level.id),
+        isLast: !isDaily && this.levelIndex >= LL.LEVELS.length - 1,
         coins: payout.added, coinsWanted: coins, coinsCapped: payout.capped,
         milestone: milestone, milestoneCoins: CFG.ECON.MILESTONE_COINS,
-        replay: prevStars > 0,
+        replay: !isDaily && prevStars > 0,
         coinTotal: LL.Progress.data.coins
       };
       this.resultTimer = setTimeout(function () {

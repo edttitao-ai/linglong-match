@@ -59,6 +59,34 @@
     winTips: ['玲珑在手，妙不可言', '一气呵成，酣畅淋漓', '方寸之间，尽显从容'],
     loseTips: ['再试一次，必有妙手', '差之毫厘，再来一局', '换个思路，柳暗花明'],
 
+    /* 每日挑战 */
+    weekdays: ['日', '一', '二', '三', '四', '五', '六'],
+    dailyTitle: '每日挑战',
+    dailyPlay: '开始挑战',
+    dailyReplay: '再挑战一次',
+    dailyHint: '每天一局，同一天所有人同一盘面；首次通关得 {n} 金币，两星以上再 +{m}',
+    dailyClearedToday: '今日已通关（{n} 星）',
+    dailyNotYet: '今日尚未通关',
+    dailyTimes: '已挑战 {n} 次',
+    dailyBest: '最佳 {n} 分',
+    dailyMonthDone: '本月通关 {n} 天',
+
+    /* 连续签到 */
+    checkinTitle: '连续签到',
+    checkinShort: '签到',
+    streakDay: '第 {n} 天',
+    streakClaimed: '已领',
+    streakToday: '待领',
+    streakFuture: '未到',
+    streakTotal: '累计签到 {n} 天 · 最长连签 {m} 天',
+    streakNext: '下一个累计奖励：{n} 天',
+    streakPaused: '漏签一天，进度暂停（不算断签）',
+    streakAllDone: '本月循环已满，明天开启新一轮',
+    claim: '领取',
+    claimed: '今日已领',
+    claimGot: '签到成功 · +{n} 金币',
+    claimMilestone: '累计 {n} 天 · 额外 +{m} 金币',
+
     /* 金币与续步 */
     coins: '金币',
     coinsEarned: '获得金币',

@@ -82,6 +82,13 @@
       }
     },
 
+    /* 连续登录：7 天一个循环，第 7 天奖励约等于常规日的 3 倍（目标梯度）
+     * 断签不立刻归零——漏 1 天原地暂停、漏 2 天才重来（铁律反而赶人） */
+    STREAK: {
+      REWARDS: [20, 30, 40, 50, 60, 80, 150],
+      TOTAL_MILESTONES: { 7: 100, 30: 300, 100: 800 }   // 永不重置的累计轨道
+    },
+
     STORAGE_KEY: 'linglong.progress.v1',
     SETTINGS_KEY: 'linglong.settings.v1'
   };

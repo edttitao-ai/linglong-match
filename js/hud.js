@@ -59,7 +59,7 @@
         self.objRefs.push({ o: o, text: text, fill: fill, item: item, last: -1 });
       });
       if (self.els.levelName) {
-        self.els.levelName.textContent = I18N.t('levelName', { n: level.id, name: I18N.levelName(level) });
+        self.els.levelName.textContent = I18N.levelTitle(level);
       }
       this.prevMoves = -1;
       this._lastMoves = null;
@@ -90,6 +90,7 @@
       for (let i = 0; i < this.objRefs.length; i++) {
         const ref = this.objRefs[i];
         const p = progress[i];
+        if (!p) continue;          /* 目标列表与 HUD 条目数不一致时不要崩 */
         const pct = p.target > 0 ? U.clamp(p.cur / p.target, 0, 1) : 1;
         const done = p.cur >= p.target;
         let label;

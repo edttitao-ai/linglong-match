@@ -44,7 +44,19 @@
         resCoinRow: $('#resCoinRow'),
         resNote: $('#resNote'),
         titleCoins: $('#titleCoins'),
-        mapCoins: $('#mapCoins')
+        mapCoins: $('#mapCoins'),
+        daily: $('#daily'),
+        dailyState: $('#dailyState'),
+        dailyCal: $('#dailyCal'),
+        dailyNote: $('#dailyNote'),
+        btnDailyPlay: $('#btnDailyPlay'),
+        dailyDot: $('#dailyDot'),
+        checkin: $('#checkin'),
+        streakRows: $('#streakRows'),
+        streakTotal: $('#streakTotal'),
+        claimNote: $('#claimNote'),
+        btnClaim: $('#btnClaim'),
+        checkinDot: $('#checkinDot')
       };
 
       /* 标题页 */
@@ -55,6 +67,18 @@
       });
       U.on($('#btnLevels'), 'click', function () { LL.Audio.play('click'); self.toMap(); });
       U.on($('#btnSet'), 'click', function () { LL.Audio.play('click'); self.showSettings('title'); });
+
+      /* 每日挑战 / 签到 */
+      U.on($('#btnDaily'), 'click', function () { LL.Audio.play('click'); self.showDaily(); });
+      U.on($('#btnDailyClose'), 'click', function () { LL.Audio.play('click'); self.hideDaily(); });
+      U.on($('#btnDailyPlay'), 'click', function () {
+        LL.Audio.play('click');
+        self.hideDaily();
+        LL.Game.startDaily();
+      });
+      U.on($('#btnCheckin'), 'click', function () { LL.Audio.play('click'); self.showCheckin(); });
+      U.on($('#btnCheckinClose'), 'click', function () { LL.Audio.play('click'); self.hideCheckin(); });
+      U.on($('#btnClaim'), 'click', function () { self.claimStreak(); });
 
       /* 关卡地图 */
       U.on($('#btnMapBack'), 'click', function () { LL.Audio.play('click'); self.showScreen('title'); });
@@ -141,7 +165,10 @@
       U.show(this.els.hud, name === 'game');
       if (name === 'game') LL.HUD.hideBanner();
       if (name === 'map') this.buildMap();
+      if (name !== 'daily') U.show(this.els.daily, false);
+      if (name !== 'checkin') U.show(this.els.checkin, false);
       this.updateCoins();
+      this.updateBadges();
       /* 信息栏的显隐会改变棋盘可用区域，必须重新排版画布 */
       LL.Render.resize();
     },
@@ -223,6 +250,124 @@
         const b = pill.querySelector('b');
         if (b) b.textContent = U.fmt(n);
       });
+    },
+
+    /* ---------- 每日挑战 ---------- */
+
+    toTitle() {
+      LL.Game.state = 'idle';
+      LL.HUD.hideBanner();
+      U.show(this.els.hud, false);
+      this.showScreen('title');
+    },
+
+    showDaily() {
+      this.buildDaily();
+      U.show(this.els.daily, true);
+    },
+
+    hideDaily() { U.show(this.els.daily, false); },
+
+    buildDaily() {
+      const P = LL.Progress;
+      const today = P.todayKey();
+      const stars = P.dailyStars(today);
+      const d = P.data.daily || {};
+      const st = this.els.dailyState;
+      st.innerHTML = '';
+      const line = U.el('div', 'daily-line' + (stars > 0 ? ' done' : ''),
+        stars > 0 ? I18N.t('dailyClearedToday', { n: stars }) : I18N.t('dailyNotYet'));
+      st.appendChild(line);
+      st.appendChild(U.el('div', 'daily-sub',
+        I18N.t('dailyTimes', { n: d.plays || 0 }) + '　·　' + I18N.t('dailyBest', { n: U.fmt(d.best || 0) })));
+
+      /* 本月日历：每格显示日期 + 三颗小点表示星级 */
+      const now = new Date();
+      const year = now.getFullYear(), month = now.getMonth() + 1;
+      const cells = P.dailyMonth(year, month);
+      const cal = this.els.dailyCal;
+      cal.innerHTML = '';
+      const wd = I18N.t('weekdays');
+      for (let i = 0; i < 7; i++) cal.appendChild(U.el('div', 'cal-w', wd[i] || ''));
+      const firstDow = new Date(year, month - 1, 1).getDay();
+      for (let i = 0; i < firstDow; i++) cal.appendChild(U.el('div', 'cal-cell empty'));
+      let doneDays = 0;
+      cells.forEach(function (c) {
+        if (c.stars > 0) doneDays++;
+        const cls = 'cal-cell' + (c.dayKey === today ? ' today' : '') +
+          (c.stars > 0 ? ' done' : '') + (c.stars === 0 && c.dayKey > today ? ' future' : '');
+        const cell = U.el('div', cls);
+        cell.appendChild(U.el('b', null, String(c.day)));
+        const dots = U.el('i', 'cal-stars');
+        for (let s = 1; s <= 3; s++) dots.appendChild(U.el('s', s <= c.stars ? 'on' : null));
+        cell.appendChild(dots);
+        cal.appendChild(cell);
+      });
+
+      this.els.dailyNote.textContent =
+        I18N.t('dailyMonthDone', { n: doneDays }) + '　·　' +
+        I18N.t('dailyHint', { n: LL.Daily.FIRST_CLEAR_COINS, m: LL.Daily.STAR_BONUS_COINS });
+      this.els.btnDailyPlay.textContent = stars > 0 ? I18N.t('dailyReplay') : I18N.t('dailyPlay');
+    },
+
+    /* ---------- 连续签到 ---------- */
+
+    showCheckin() {
+      this.buildCheckin();
+      U.show(this.els.checkin, true);
+    },
+
+    hideCheckin() { U.show(this.els.checkin, false); },
+
+    buildCheckin() {
+      const P = LL.Progress;
+      const st = P.streakStatus();
+      const rows = this.els.streakRows;
+      rows.innerHTML = '';
+      /* 未签到时，今天这一格之前的都算已领（漏签一天会停在同一天，不算断） */
+      const claimedUpTo = st.dayIndex - 1;
+      for (let i = 1; i <= LL.CFG.STREAK.REWARDS.length; i++) {
+        const reward = LL.CFG.STREAK.REWARDS[i - 1];
+        let state;
+        if (st.claimed) state = i <= st.dayIndex ? 'done' : 'future';
+        else state = i <= claimedUpTo ? 'done' : (i === st.dayIndex ? 'today' : 'future');
+        const row = U.el('div', 'streak-row ' + state);
+        row.appendChild(U.el('span', 's-day', I18N.t('streakDay', { n: i })));
+        row.appendChild(U.el('span', 's-reward', '+' + U.fmt(reward)));
+        row.appendChild(U.el('span', 's-state', I18N.t(
+          state === 'done' ? 'streakClaimed' : (state === 'today' ? 'streakToday' : 'streakFuture'))));
+        rows.appendChild(row);
+      }
+      const nxt = [7, 30, 100].filter(function (n) { return n > (st.total || 0); })[0];
+      this.els.streakTotal.textContent =
+        I18N.t('streakTotal', { n: st.total || 0, m: st.best || 0 }) +
+        (nxt ? '　·　' + I18N.t('streakNext', { n: nxt }) : '') +
+        (st.paused ? '　·　' + I18N.t('streakPaused') : '');
+      this.els.btnClaim.textContent = st.claimed ? I18N.t('claimed') : I18N.t('claim');
+      this.els.btnClaim.disabled = !!st.claimed;
+      this.els.btnClaim.classList.toggle('disabled', !!st.claimed);
+      U.show(this.els.claimNote, false);
+    },
+
+    claimStreak() {
+      const got = LL.Progress.claimStreak();
+      if (!got) return;
+      LL.Audio.play('star', { rate: 1.08, vol: 0.9 });
+      this.els.claimNote.textContent = I18N.t('claimGot', { n: U.fmt(got.coins) }) +
+        (got.milestone ? '　·　' + I18N.t('claimMilestone', { n: got.total, m: U.fmt(got.milestone) }) : '');
+      U.show(this.els.claimNote, true);
+      this.buildCheckin();
+      U.show(this.els.claimNote, true);
+      this.updateCoins();
+      this.updateBadges();
+    },
+
+    /* 标题页上的小红点：有可领的签到 / 今日每日挑战尚未通关 */
+    updateBadges() {
+      const P = LL.Progress;
+      const st = P.streakStatus();
+      U.show(this.els.checkinDot, !st.claimed);
+      U.show(this.els.dailyDot, P.dailyStars(P.todayKey()) === 0);
     },
 
     /* ---------- 失败救援（续步） ---------- */

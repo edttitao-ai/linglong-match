@@ -80,8 +80,20 @@
       </div>
       <div class="btn-col">
         <button id="btnPlay" class="primary" data-i18n="play">开始游戏</button>
-        <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
-        <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
+        <div class="btn-row">
+          <button id="btnDaily" class="ghost">
+            <span data-i18n="dailyTitle">每日挑战</span>
+            <i class="dot hidden" id="dailyDot"></i>
+          </button>
+          <button id="btnCheckin" class="ghost">
+            <span data-i18n="checkinShort">签到</span>
+            <i class="dot hidden" id="checkinDot"></i>
+          </button>
+        </div>
+        <div class="btn-row">
+          <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
+          <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
+        </div>
       </div>
       <div class="title-hint" data-i18n="titleHint">点击或拖动相邻两块交换，凑齐三连即可消除</div>
     </div>
@@ -174,6 +186,36 @@
     </div>
   </div>
 
+  <!-- 每日挑战 -->
+  <div id="daily" class="overlay hidden">
+    <div class="panel daily-panel">
+      <h2 data-i18n="dailyTitle">每日挑战</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="daily-state" id="dailyState"></div>
+      <div class="daily-cal" id="dailyCal"></div>
+      <div class="daily-note" id="dailyNote"></div>
+      <div class="btn-col">
+        <button id="btnDailyPlay" class="primary" data-i18n="dailyPlay">开始挑战</button>
+        <button id="btnDailyClose" class="ghost" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 连续签到 -->
+  <div id="checkin" class="overlay hidden">
+    <div class="panel checkin-panel">
+      <h2 data-i18n="checkinTitle">连续签到</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="streak-rows" id="streakRows"></div>
+      <div class="streak-total" id="streakTotal"></div>
+      <div class="claim-note hidden" id="claimNote"></div>
+      <div class="btn-col">
+        <button id="btnClaim" class="primary">领取</button>
+        <button id="btnCheckinClose" class="ghost" data-i18n="close">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 失败救援（续步） -->
   <div id="revive" class="overlay hidden">
     <div class="panel revive-panel">
@@ -212,6 +254,7 @@
 <script src="js/special.js"></script>
 <script src="js/resolver.js"></script>
 <script src="js/levels.js"></script>
+<script src="js/daily.js"></script>
 <script src="js/anim.js"></script>
 <script src="js/render.js"></script>
 <script src="js/hud.js"></script>

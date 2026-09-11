@@ -27,6 +27,14 @@
       return level.name;
     },
 
+    /* 关卡标题：每日挑战不带「第 N 关」前缀 */
+    levelTitle(level) {
+      if (!level) return '';
+      return level.daily
+        ? this.t('dailyTitle') + ' · ' + this.levelName(level)
+        : this.t('levelName', { n: level.id, name: this.levelName(level) });
+    },
+
     /* 取基础块名 */
     tileName(color, lang) {
       const info = LL.CFG.TILE_INFO[color];

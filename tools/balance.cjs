@@ -11,7 +11,7 @@
 'use strict';
 const path = require('path');
 
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js'].forEach(function (f) {
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js', 'daily.js'].forEach(function (f) {
   require(path.join(__dirname, '..', 'js', f));
 });
 const LL = globalThis.LL;
@@ -114,6 +114,47 @@ function percentile(sorted, p) {
   if (!sorted.length) return 0;
   const i = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * p)));
   return sorted[i];
+}
+
+/* ---------- 每日挑战抽查 ----------
+ * node tools/balance.cjs --daily            只看今天
+ * node tools/balance.cjs --daily --days=14  连看两周（检查难度波动）
+ * 每日挑战应当「有挑战但可完成」，胜率目标区间 55%~85% */
+const dailyMode = args.indexOf('--daily') >= 0;
+if (dailyMode) {
+  const days = getArg('days', 1);
+  const base = new Date();
+  console.log('每日挑战抽查（贪心玩家，每关 ' + RUNS + ' 局）\n');
+  console.log('日期              色 步 目标                             胜率    平均剩余步');
+  let sum = 0, n = 0, worst = 1;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(base.getTime() + i * 86400000);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const lv = LL.Daily.build(key);
+    let win = 0, left = 0;
+    for (let k = 0; k < RUNS; k++) {
+      const r = playGame(lv, 5000 + i * 977 + k * 31);
+      if (r.win) { win++; left += r.movesLeft; }
+    }
+    const rate = win / RUNS;
+    sum += rate; n++;
+    worst = Math.min(worst, rate);
+    const objText = lv.objectives.map(function (o) {
+      if (o.type === 'score') return '分' + o.target;
+      if (o.type === 'collect') return '收' + CFG.TILE_INFO[o.color].name + '×' + o.count;
+      return '清障×' + o.count;
+    }).join('+');
+    console.log(
+      key + '  ' + lv.name.slice(-2) + '  ' + String(lv.colors) + '  ' + String(lv.moves).padStart(2) + '  ' +
+      objText.padEnd(32, ' ') + ' ' + (rate * 100).toFixed(1).padStart(5) + '%  ' +
+      (win ? (left / win).toFixed(1).padStart(6) : '   -  ') +
+      (rate < 0.5 ? '  ← 偏难' : (rate > 0.95 ? '  ← 偏易' : ''))
+    );
+  }
+  const avg = sum / n;
+  console.log('\n平均胜率 ' + (avg * 100).toFixed(1) + '%，最低 ' + (worst * 100).toFixed(1) + '%' +
+    (avg >= 0.55 && avg <= 0.9 ? '  ✓ 落在合理区间' : '  ✗ 需要调整生成参数'));
+  process.exit(0);
 }
 
 const levels = LL.LEVELS.filter(function (lv) { return !ONLY || lv.id === ONLY; });
