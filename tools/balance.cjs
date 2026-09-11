@@ -13,7 +13,7 @@
 'use strict';
 const path = require('path');
 
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'levels.js', 'daily.js', 'modes.js'].forEach(function (f) {
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'hint.js', 'levels.js', 'daily.js', 'modes.js'].forEach(function (f) {
   require(path.join(__dirname, '..', 'js', f));
 });
 const LL = globalThis.LL;
@@ -30,36 +30,14 @@ const ONLY = getArg('level', 0);
 const FROM = getArg('from', 0);
 const TO = getArg('to', 0);
 
-/* ---------- 贪心玩家 ---------- */
+/* ---------- 贪心玩家 ----------
+ * 打分口径来自 js/hint.js —— 游戏里的空闲提示用的是同一份，
+ * 免得出现「工具认为的最优解」和「提示推荐的最优解」两套标准。
+ * 这里只在同分时加一点随机，让每一局不至于走出完全一样的路线。 */
+const Hint = LL.Hint;
 
 function scoreMove(b, mv, level, rnd) {
-  let sc = 0;
-  if (mv.kind === 'special') sc += 55;      /* 双特殊块组合：收益最高 */
-  else if (mv.kind === 'taiji') sc += 60;   /* 太极与任意块 */
-
-  B.swapTiles(b, mv.a, mv.b);
-  const groups = B.findMatches(b);
-  let tiles = 0, specials = 0, valuable = 0;
-  for (let i = 0; i < groups.length; i++) {
-    const g = groups[i];
-    tiles += g.cells.size;
-    if (SP.decideSpecialFor(g) !== S.NONE) specials++;
-    g.cells.forEach(function (k) {
-      const r = B.rowOf(b, k), c = B.colOf(b, k);
-      const tl = b.cells[r][c];
-      if (!tl) return;
-      for (let j = 0; j < level.objectives.length; j++) {
-        const o = level.objectives[j];
-        if (o.type === 'collect' && o.color === tl.t) valuable += 26;
-      }
-      if (b.obst[r][c]) valuable += 34;               /* 破障优先 */
-      if (tl.s !== S.NONE) sc += 40;                  /* 引爆已有特殊块 */
-    });
-  }
-  /* 特殊块落点也计入目标价值 */
-  B.swapTiles(b, mv.a, mv.b);
-  sc += tiles * 11 + specials * 30 + valuable + rnd() * 14;
-  return sc;
+  return Hint.score(b, mv, level).score + rnd() * 14;
 }
 
 /* 用 --weaken=N 模拟「手比较生的玩家」：N% 的走法随机下，

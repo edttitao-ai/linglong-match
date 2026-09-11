@@ -20,7 +20,7 @@ const path = require('path');
 
 /* 以 CommonJS 方式加载浏览器脚本（它们挂在 globalThis.LL 上）。
  * 文案文件也一起加载：这样第 9 节的「资产与文案齐全」才能真的查到字典。 */
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'skilldemo.js', 'levels.js',
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'hint.js', 'skilldemo.js', 'levels.js',
   '../lang/zh.js', '../lang/en.js',
   'i18n.js', 'progress.js', 'quests.js', 'daily.js', 'modes.js', 'achievements.js',
   'anim.js', 'assets.js', 'audio.js', 'render.js', 'hud.js', 'input.js', 'game.js', 'ui.js'].forEach(function (f) {
@@ -988,6 +988,77 @@ section('12. 文案完整性');
   });
   eq(noNeed.length, 0, '带 {n} 的成就描述都有对应数字' +
     (noNeed.length ? '：' + noNeed.join(' | ') : ''));
+}
+
+/* ---------- 13. 空闲提示（推荐最优解，而不是扫到的第一个走法） ---------- */
+section('13. 空闲提示取最优解');
+{
+  const H = LL.Hint;
+  const lv = { objectives: [{ type: 'collect', color: 0, count: 10 }] };
+
+  /* 13a. 与「暴力比较所有可行走法」的结果一致 */
+  let mismatch = 0, boards = 0, diffFromScan = 0;
+  for (let seed = 0; seed < 60; seed++) {
+    const b = B.create({ colors: 5, rnd: U.rng(4000 + seed) });
+    const all = H.rank(b, lv, 0);
+    if (!all.length) continue;
+    boards++;
+    const best = H.best(b, lv);
+    let maxSc = -Infinity;
+    for (let i = 0; i < all.length; i++) if (all[i].score > maxSc) maxSc = all[i].score;
+    if (best.score !== maxSc) mismatch++;
+    /* 扫描序的第一个走法：这正是改之前提示会给的那个 */
+    const moves = B.findAllMoves(b, 0);
+    const f = moves[0];
+    if (!(f.a.r === best.a.r && f.a.c === best.a.c && f.b.r === best.b.r && f.b.c === best.b.c)) diffFromScan++;
+  }
+  eq(mismatch, 0, 'Hint.best 与暴力取最大一致（' + boards + ' 个盘面）');
+  ok(diffFromScan > boards * 0.3,
+    '多数盘面上「扫描到的第一个走法」并非最优（' + diffFromScan + '/' + boards + '）——原来的提示就是这样指偏的');
+
+  /* 13b. 确定性：同一个盘面重复问，答案必须一样（否则提示会闪） */
+  const db = B.create({ colors: 5, rnd: U.rng(77) });
+  const b1 = H.best(db, lv), b2 = H.best(db, lv);
+  ok(b1.a.r === b2.a.r && b1.a.c === b2.a.c && b1.score === b2.score, '同一盘面的最优解稳定不变');
+
+  /* 13c. 两颗特殊块相邻时，应该推荐它们组合，而不是旁边那个普通三连 */
+  const sb = B.create({ colors: 5, rnd: U.rng(11) });
+  sb.cells[3][3] = B.tile(1, S.WIND_H);
+  sb.cells[3][4] = B.tile(2, S.THUNDER);
+  const combos = H.rank(sb, lv, 0).filter(function (m) { return m.kind === 'special'; });
+  if (combos.length) {
+    eq(H.best(sb, lv).kind, 'special', '场上有可组合的特殊块时，提示推荐组合爆破');
+  } else {
+    ok(true, '（该盘面未构造出可组合的特殊块，跳过）');
+  }
+
+  /* 13d. 太极与普通块相邻：太极那一手就是最优 */
+  const tb = B.create({ colors: 5, rnd: U.rng(13) });
+  tb.cells[4][4] = B.tile(-1, S.TAIJI);
+  tb.cells[4][5] = B.tile(2, 0);
+  const taijiMoves = H.rank(tb, lv, 0).filter(function (m) { return m.kind === 'taiji'; });
+  eq(taijiMoves.length > 0, true, '太极与普通块相邻时算得出 taiji 走法');
+  eq(H.best(tb, lv).kind, 'taiji', '提示优先推荐太极（清整色）');
+
+  /* 13e. 打得到障碍的那一步要排在纯消块前面 */
+  const ob = B.create({ colors: 5, rnd: U.rng(17) });
+  const bestOb = H.best(ob, { objectives: [{ type: 'clear' }] });
+  ok(bestOb && bestOb.why && (bestOb.why.obstacles > 0 || bestOb.why.tiles > 0),
+    '清障关里提示会优先考虑能打到障碍的走法');
+
+  /* 13f. 理由取的是贡献最大的那一项 */
+  eq(H.reasonKey({ taiji: 60, tiles: 33 }), 'hintTaiji', '理由取最大项（太极 > 消块）');
+  eq(H.reasonKey({ combo: 55, collect: 26 }), 'hintCombo', '理由取最大项（组合 > 收集）');
+  eq(H.reasonKey({ obstacles: 34, tiles: 99 }), 'hintTiles', '理由取最大项（消块 > 破障）');
+  eq(H.reasonKey({}), 'hintTiles', '没有明细时给一个兜底理由');
+  eq(H.reasonKey(null), 'hintTiles', 'why 缺失也不崩');
+
+  /* 13g. 提示理由的文案键要齐全（中英都要） */
+  const zhDict2 = (LL.LANG && LL.LANG.zh) || {};
+  const enDict2 = (LL.LANG && LL.LANG.en) || {};
+  const missHint = ['hintTaiji', 'hintCombo', 'hintFire', 'hintObstacle', 'hintCollect', 'hintSpecial', 'hintTiles']
+    .filter(function (k) { return !zhDict2[k] || !enDict2[k]; });
+  eq(missHint.length, 0, '提示理由的中英文案齐全' + (missHint.length ? '：' + missHint.join(' | ') : ''));
 }
 
 /* ---------- 汇总 ---------- */

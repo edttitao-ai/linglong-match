@@ -7,6 +7,7 @@
   const B = LL.Board;
   const R = LL.Resolver;
   const SK = LL.Skills;
+  const Hint = LL.Hint;
   const S = CFG.SPECIAL;
   const O = CFG.OBST;
   const I18N = LL.I18N;
@@ -905,8 +906,26 @@
       if (this.state === 'playing') {
         this.idleT += dt;
         if (!this.hint && !this.aim && this.idleT > CFG.HINT_DELAY) {
-          const moves = B.findAllMoves(this.board, 1);
-          if (moves.length) this.hint = { a: moves[0].a, b: moves[0].b };
+          /* 提示要给「最优解」，不是「扫到的第一个三连」——
+           * 玩家卡了这么久，说明他在找最优走法，此时指一个没营养的位置是在帮倒忙。
+           * 评判标准与平衡模拟器共用一份（见 hint.js）。 */
+          const pick = Hint.best(this.board, this.level);
+          if (pick) {
+            this.hint = { a: pick.a, b: pick.b, why: pick.why, score: pick.score };
+            this.hintTipT = CFG.HINT_TIP_DELAY;
+          }
+        }
+        /* 还没动手就再补一句「为什么推荐它」，讲清收益点而不只是画个框 */
+        if (this.hint && this.hint.why && this.idleT > CFG.HINT_DELAY) {
+          this.hintTipT -= dt;
+          if (this.hintTipT <= 0) {
+            this.hintTipT = CFG.HINT_TIP_EVERY;
+            const mid = LL.Render.cellXY(this.hint.a.r, this.hint.a.c);
+            const mid2 = LL.Render.cellXY(this.hint.b.r, this.hint.b.c);
+            LL.Anim.text((mid.x + mid2.x) / 2, (mid.y + mid2.y) / 2 - LL.Render.geom.cell * 0.7,
+              I18N.t(Hint.reasonKey(this.hint.why)),
+              { size: 20, color: '#5E4A22', life: 1600, stroke: '#FFF8E6' });
+          }
         }
       }
 

@@ -62,7 +62,9 @@
     },
     CASCADE_SPEEDUP: 0.9,   // 每层连锁动画提速
     MIN_TIME_SCALE: 0.6,
-    HINT_DELAY: 5200,       // 空闲多久给出提示
+    HINT_DELAY: 5200,       // 空闲多久给出提示（高亮最优的一步）
+    HINT_TIP_DELAY: 6500,   // 再等这么久还没动手，就补一句「为什么推荐它」
+    HINT_TIP_EVERY: 7000,   // 之后每隔这么久重复一次，别让那句话永久消失
     ACCEL_SCALE: 3.2,       // 点击加速倍率
 
     /* 经济与留存系统
