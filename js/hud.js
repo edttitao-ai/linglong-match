@@ -61,6 +61,10 @@
       if (self.els.levelName) {
         self.els.levelName.textContent = I18N.levelTitle(level);
       }
+      /* 限时模式：把「剩余步数」换成「剩余时间」 */
+      const movesLabel = self.els.movesBox ? self.els.movesBox.querySelector('.k') : null;
+      if (movesLabel) movesLabel.textContent = I18N.t(level.timed ? 'timeLeft' : 'moves');
+      self._lastMoves = null;
       this.prevMoves = -1;
       this._lastMoves = null;
       this._lastScore = null;
@@ -105,6 +109,13 @@
           ref.item.classList.toggle('done', done);
         }
       }
+    },
+
+    /* 限时模式：显示剩余秒数（个位数时变色提醒） */
+    setTimeLeft(sec) {
+      const n = Math.max(0, Math.ceil(sec));
+      this.setMoves(n);
+      if (this.els.movesBox) this.els.movesBox.classList.toggle('low', n <= 10);
     },
 
     banner(main, sub, dur) {

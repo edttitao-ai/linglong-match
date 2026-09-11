@@ -119,12 +119,38 @@
         <div class="star-total" id="mapStars"></div>
       </div>
       <img class="cloud-rule map-rule" src="assets/img/ui_cloud.svg" alt="">
-      <div class="boost-bar" id="boostBar">
-        <div class="boost-title" data-i18n="boostTitle">开局道具</div>
-        <div class="boost-slots" id="boostSlots"></div>
-        <div class="boost-note hidden" id="boostNote"></div>
+      <div class="map-tabs" id="mapTabs">
+        <button type="button" data-tab="campaign" class="on" data-i18n="tabCampaign">关卡</button>
+        <button type="button" data-tab="endless" data-i18n="tabEndless">无尽</button>
+        <button type="button" data-tab="timed" data-i18n="tabTimed">限时</button>
       </div>
-      <div class="map-grid" id="mapGrid"></div>
+
+      <div class="tab-pane" id="paneCampaign">
+        <div class="boost-bar" id="boostBar">
+          <div class="boost-title" data-i18n="boostTitle">开局道具</div>
+          <div class="boost-slots" id="boostSlots"></div>
+          <div class="boost-note hidden" id="boostNote"></div>
+        </div>
+        <div class="map-grid" id="mapGrid"></div>
+      </div>
+
+      <div class="tab-pane hidden" id="paneEndless">
+        <div class="mode-card">
+          <div class="mode-title" data-i18n="endlessTitle">无尽模式</div>
+          <p class="mode-desc" data-i18n="endlessDesc">一盘一个目标，达标即进入下一盘，剩余步数结转（最多 5 步）。每 3 盘加一种颜色、多给 2 步，障碍逐渐出现——看你能撑到第几盘。</p>
+          <div class="mode-stats" id="endlessStats"></div>
+          <button type="button" id="btnEndlessStart" class="primary" data-i18n="modeStart">开始挑战</button>
+        </div>
+      </div>
+
+      <div class="tab-pane hidden" id="paneTimed">
+        <div class="mode-card">
+          <div class="mode-title" data-i18n="timedTitle">限时挑战</div>
+          <p class="mode-desc" data-i18n="timedDesc">60 秒内尽可能多得分，不计步数。连锁动画不吞时间，所以放心连锁。</p>
+          <div class="mode-stats" id="timedStats"></div>
+          <button type="button" id="btnTimedStart" class="primary" data-i18n="modeStart">开始挑战</button>
+        </div>
+      </div>
       <div class="roller bottom"></div>
     </div>
   </div>
@@ -279,6 +305,7 @@
 <script src="js/levels.js"></script>
 <script src="js/daily.js"></script>
 <script src="js/quests.js"></script>
+<script src="js/modes.js"></script>
 <script src="js/anim.js"></script>
 <script src="js/render.js"></script>
 <script src="js/hud.js"></script>

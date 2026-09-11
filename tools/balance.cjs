@@ -11,7 +11,7 @@
 'use strict';
 const path = require('path');
 
-['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js', 'daily.js'].forEach(function (f) {
+['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'levels.js', 'daily.js', 'modes.js'].forEach(function (f) {
   require(path.join(__dirname, '..', 'js', f));
 });
 const LL = globalThis.LL;
@@ -114,6 +114,33 @@ function percentile(sorted, p) {
   if (!sorted.length) return 0;
   const i = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * p)));
   return sorted[i];
+}
+
+/* ---------- 无尽模式抽查 ----------
+ * node tools/balance.cjs --endless --stages=20
+ * 目标：前几盘 80%+ 通过，中段 60~80%，后段 40~60% —— 让「撑到第几盘」有意义 */
+if (args.indexOf('--endless') >= 0) {
+  const maxStage = getArg('stages', 20);
+  console.log('无尽模式抽查（贪心玩家，每盘 ' + RUNS + ' 局）\n');
+  console.log('盘次  色 步  目标      障碍  通过率   平均剩余步');
+  let sum = 0;
+  for (let s = 1; s <= maxStage; s++) {
+    const lv = LL.Modes.endlessLevel(s);
+    let win = 0, left = 0;
+    for (let k = 0; k < RUNS; k++) {
+      const r = playGame(lv, 3000 + s * 131 + k * 17);
+      if (r.win) { win++; left += r.movesLeft; }
+    }
+    const rate = win / RUNS;
+    sum += rate;
+    console.log(
+      String(s).padStart(3) + '   ' + lv.colors + '  ' + String(lv.moves).padStart(2) + '  ' +
+      String(lv.objectives[0].target).padStart(6) + '  ' + String(lv.clearTotal).padStart(4) + '  ' +
+      (rate * 100).toFixed(1).padStart(5) + '%  ' + (win ? (left / win).toFixed(1).padStart(6) : '   -  ')
+    );
+  }
+  console.log('\n平均通过率 ' + (sum / maxStage * 100).toFixed(1) + '%');
+  process.exit(0);
 }
 
 /* ---------- 每日挑战抽查 ----------

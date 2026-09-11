@@ -13,6 +13,8 @@
     streak: { count: 0, lastDay: '', best: 0, total: 0 },
     daily: { cleared: {}, best: 0, plays: 0 },
     quests: { day: '', list: [], progress: [], claimed: [], rerolls: 0, bonusClaimed: false },
+    endless: { bestStage: 0, bestScore: 0, weekKey: '', weekBest: 0, runs: 0 },
+    timed: { best: 0, runs: 0 },
     boosters: { moves: 0, wind: 0, shuffle: 0 },
     armed: { moves: false, wind: false, shuffle: false }
   };
@@ -190,6 +192,40 @@
         out.push({ dayKey: key, day: d, stars: this.dailyStars(key) });
       }
       return out;
+    },
+
+    /* ---------------- 无尽 / 限时 ---------------- */
+
+    /* 本周键（用于「本周最佳」，不比真人榜但能跟自己比） */
+    weekKey(d) {
+      const dt = d || new Date();
+      const days = Math.floor(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()) / 86400000);
+      return String(Math.floor(days / 7));
+    },
+
+    recordEndless(stage, score) {
+      const e = this.data.endless;
+      const wk = this.weekKey();
+      if (e.weekKey !== wk) { e.weekKey = wk; e.weekBest = 0; }
+      const isBest = stage > (e.bestStage || 0) ||
+        (stage === (e.bestStage || 0) && score > (e.bestScore || 0));
+      const bestStage = Math.max(e.bestStage || 0, stage);
+      const bestScore = Math.max(e.bestScore || 0, score);
+      e.bestStage = bestStage;
+      e.bestScore = bestScore;
+      e.weekBest = Math.max(e.weekBest || 0, stage);
+      e.runs = (e.runs || 0) + 1;
+      this.save();
+      return { bestStage: bestStage, bestScore: bestScore, weekBest: e.weekBest, isBest: isBest };
+    },
+
+    recordTimed(score) {
+      const t = this.data.timed;
+      const isBest = score > (t.best || 0);
+      t.best = Math.max(t.best || 0, score);
+      t.runs = (t.runs || 0) + 1;
+      this.save();
+      return { best: t.best, isBest: isBest };
     },
 
     /* ---------------- 每日任务 ---------------- */

@@ -27,12 +27,13 @@
       return level.name;
     },
 
-    /* 关卡标题：每日挑战不带「第 N 关」前缀 */
+    /* 关卡标题：每日挑战 / 无尽 / 限时都没有「第 N 关」前缀 */
     levelTitle(level) {
       if (!level) return '';
-      return level.daily
-        ? this.t('dailyTitle') + ' · ' + this.levelName(level)
-        : this.t('levelName', { n: level.id, name: this.levelName(level) });
+      if (level.endless) return this.t('endlessTitle') + ' · ' + this.t('stageLabel', { n: level.stage || 1 });
+      if (level.timed) return this.t('timedTitle');
+      if (level.daily) return this.t('dailyTitle') + ' · ' + this.levelName(level);
+      return this.t('levelName', { n: level.id, name: this.levelName(level) });
     },
 
     /* 取基础块名 */

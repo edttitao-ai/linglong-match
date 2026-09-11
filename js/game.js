@@ -44,6 +44,25 @@
       this.start(level, idx);
     },
 
+    /* 无尽模式：一盘一目标，达标进入下一盘（剩余步数结转，上限 5 步） */
+    startEndless(stage, carry) {
+      stage = Math.max(1, stage || 1);
+      const def = LL.Modes.endlessLevel(stage);
+      this.endlessStage = stage;
+      this.start(def, -1);
+      if (carry > 0) {
+        this.movesLeft += carry;
+        LL.HUD.setMoves(this.movesLeft);
+      }
+    },
+
+    /* 限时挑战：60 秒内尽可能多得分 */
+    startTimed() {
+      const def = LL.Modes.timedLevel();
+      this.timeLeft = def.seconds;
+      this.start(def, -1);
+    },
+
     /* 每日挑战：日期种子生成，同一天所有人同一盘；不限尝试次数 */
     startDaily() {
       const key = LL.Progress.todayKey();
@@ -85,6 +104,11 @@
       this.lastResult = null;
       this.pendingRevive = null;
       this.reviveUsed = 0;          /* 本次挑战内的续步次数（每次开始关卡重置） */
+      this.endless = !!level.endless;
+      this.timed = !!level.timed;
+      this.endlessStage = level.stage || this.endlessStage || 1;
+      this.timeLeft = level.seconds || 0;
+      this.maxCascade = 0;
       LL.Anim.reset();
       LL.HUD.setup(level, this.obstTotal);
       LL.HUD.setScore(0);
@@ -347,13 +371,74 @@
 
     finishTurnInner() {
       LL.HUD.updateObjectives(this.progressList());
+      if (this.timed) {          /* 限时模式只看时间，目标分只是奖励档位 */
+        this.state = 'playing';
+        return;
+      }
       if (this.objectivesDone()) {
-        this.win();
+        if (this.endless) this.endlessAdvance();
+        else this.win();
       } else if (this.movesLeft <= 0) {
-        this.lose();
+        if (this.endless) this.runOver();
+        else this.lose();
       } else {
         this.state = 'playing';
       }
+    },
+
+    /* 无尽模式达标：结转剩余步数（上限 carryCap），稍后开下一盘 */
+    endlessAdvance() {
+      const cap = LL.Modes.CFG.endless.carryCap;
+      const carry = Math.min(cap, this.movesLeft);
+      this.state = 'between';
+      LL.Progress.recordEndless(this.endlessStage, this.score);
+      LL.Audio.play('win');
+      LL.Anim.addFlash(0.18);
+      LL.HUD.banner(
+        I18N.t('endlessStageClear', { n: this.endlessStage }),
+        carry > 0 ? I18N.t('endlessCarry', { n: carry }) : '',
+        1500
+      );
+      const self = this;
+      this.resultTimer = setTimeout(function () {
+        if (self.state === 'between') self.startEndless(self.endlessStage + 1, carry);
+      }, 1100);
+    },
+
+    /* 一次挑战结束（无尽 / 限时）：结算金币与最佳纪录 */
+    runOver() {
+      this.state = 'over';
+      LL.Audio.play('lose');
+      const isEndless = this.endless;
+      const coins = isEndless ? LL.Modes.endlessCoins(this.endlessStage) : LL.Modes.timedCoins(this.score);
+      const rec = isEndless
+        ? LL.Progress.recordEndless(this.endlessStage, this.score)
+        : LL.Progress.recordTimed(this.score);
+      const payout = LL.Progress.addCoins(coins);
+      LL.Progress.save();
+      this.lastResult = {
+        win: false,
+        mode: isEndless ? 'endless' : 'timed',
+        score: this.score,
+        stage: this.endlessStage,
+        best: rec.best,
+        isBest: rec.isBest,
+        level: this.level,
+        levelIndex: -1,
+        coins: payout.added, coinsCapped: payout.capped, replay: false,
+        coinTotal: LL.Progress.data.coins
+      };
+      const self = this;
+      this.resultTimer = setTimeout(function () {
+        if (self.state === 'over') LL.UI.showResult(self.lastResult);
+      }, 900);
+    },
+
+    /* 模式重开（无尽回到第 1 盘，限时重新计时） */
+    restartRun() {
+      if (this.endless) this.startEndless(1);
+      else if (this.timed) this.startTimed();
+      else this.restart();
     },
 
     /* 目标完成度（0~1，多目标取平均）——续步只在快接近目标时才提供 */
@@ -538,6 +623,18 @@
         if (this.introT <= 0) { this.state = 'playing'; this.notifyInput(); }
       }
 
+      /* 限时模式：只在玩家可操作时走表，连锁动画不吞时间 */
+      if (this.timed && this.state === 'playing') {
+        this.timeLeft -= dt / 1000;
+        LL.HUD.setTimeLeft(this.timeLeft);
+        if (this.timeLeft <= 0) {
+          this.timeLeft = 0;
+          LL.HUD.setTimeLeft(0);
+          this.runOver();
+          return;
+        }
+      }
+
       if (this.state === 'playing') {
         this.idleT += dt;
         if (!this.hint && this.idleT > CFG.HINT_DELAY) {
@@ -554,7 +651,8 @@
       }
       if (this.board) {
         LL.HUD.setScore(Math.round(this.displayScore));
-        LL.HUD.setMoves(Math.max(0, this.movesLeft));
+        /* 限时模式的格子里显示的是秒数，不能再用步数覆盖（否则每帧被刷回占位值） */
+        if (!this.timed) LL.HUD.setMoves(Math.max(0, this.movesLeft));
       }
     },
 

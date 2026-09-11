@@ -143,6 +143,8 @@
     hash: hash,
     build: build,
     dateOf: dateOf,
+    buildLayout: makeLayout,       /* 供无尽模式复用同一套障碍生成 */
+    countObstacles: countObstacles,
     FIRST_CLEAR_COINS: FIRST_CLEAR_COINS,
     STAR_BONUS_COINS: STAR_BONUS_COINS
   };

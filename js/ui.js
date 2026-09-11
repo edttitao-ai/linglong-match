@@ -63,7 +63,13 @@
         btnQuestAll: $('#btnQuestAll'),
         questDot: $('#questDot'),
         boostSlots: $('#boostSlots'),
-        boostNote: $('#boostNote')
+        boostNote: $('#boostNote'),
+        mapTabs: $('#mapTabs'),
+        paneCampaign: $('#paneCampaign'),
+        paneEndless: $('#paneEndless'),
+        paneTimed: $('#paneTimed'),
+        endlessStats: $('#endlessStats'),
+        timedStats: $('#timedStats')
       };
 
       /* 标题页 */
@@ -73,6 +79,19 @@
         LL.Game.startLevel(idx);
       });
       U.on($('#btnLevels'), 'click', function () { LL.Audio.play('click'); self.toMap(); });
+
+      /* 关卡地图的模式分页 */
+      U.$$('#mapTabs button').forEach(function (btn) {
+        U.on(btn, 'click', function () { self.showTab(btn.getAttribute('data-tab')); });
+      });
+      U.on($('#btnEndlessStart'), 'click', function () {
+        LL.Audio.play('click');
+        LL.Game.startEndless(1);
+      });
+      U.on($('#btnTimedStart'), 'click', function () {
+        LL.Audio.play('click');
+        LL.Game.startTimed();
+      });
       U.on($('#btnSet'), 'click', function () { LL.Audio.play('click'); self.showSettings('title'); });
 
       /* 每日挑战 / 签到 */
@@ -107,7 +126,13 @@
 
       /* 结算面板 */
       U.on($('#btnResRetry'), 'click', function () { LL.Audio.play('click'); self.hideResult(); LL.Game.restart(); });
-      U.on(this.els.btnResNext, 'click', function () { LL.Audio.play('click'); self.hideResult(); LL.Game.nextLevel(); });
+      U.on(this.els.btnResNext, 'click', function () {
+        LL.Audio.play('click');
+        self.hideResult();
+        const last = LL.Game.lastResult;
+        if (last && last.mode) LL.Game.restartRun();   /* 无尽 / 限时：再来一局 */
+        else LL.Game.nextLevel();
+      });
       U.on($('#btnResMap'), 'click', function () { LL.Audio.play('click'); self.hideResult(); self.toMap(); });
 
       /* 设置面板 */
@@ -264,6 +289,51 @@
         const b = pill.querySelector('b');
         if (b) b.textContent = U.fmt(n);
       });
+    },
+
+    /* ---------- 关卡地图的模式分页 ---------- */
+
+    showTab(tab) {
+      const panes = { campaign: this.els.paneCampaign, endless: this.els.paneEndless, timed: this.els.paneTimed };
+      U.$$('#mapTabs button').forEach(function (btn) {
+        btn.classList.toggle('on', btn.getAttribute('data-tab') === tab);
+      });
+      for (const k in panes) {
+        if (panes[k]) U.show(panes[k], k === tab);
+      }
+      if (tab === 'endless') this.buildEndlessPane();
+      if (tab === 'timed') this.buildTimedPane();
+      if (tab === 'campaign') this.buildBoostBar();
+    },
+
+    buildEndlessPane() {
+      const e = LL.Progress.data.endless || {};
+      const self = this;
+      const rows = [
+        [I18N.t('bestStage'), (e.bestStage || 0) + ' ' + I18N.t('stageUnit')],
+        [I18N.t('bestScore'), U.fmt(e.bestScore || 0)],
+        [I18N.t('weekBest'), (Math.max(0, e.weekBest || 0)) + ' ' + I18N.t('stageUnit')],
+        [I18N.t('runsCount'), String(e.runs || 0)]
+      ];
+      this.els.endlessStats.innerHTML = rows.map(function (r) {
+        return '<div class="ms-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
+      }).join('');
+      void self;
+    },
+
+    buildTimedPane() {
+      const t = LL.Progress.data.timed || {};
+      const tiers = LL.Modes.CFG.timed;
+      const rows = [
+        [I18N.t('bestScore'), U.fmt(t.best || 0)],
+        [I18N.t('runsCount'), String(t.runs || 0)],
+        [I18N.t('timedTiers'), tiers.tiers.map(function (v, i) {
+          return U.fmt(v) + ' → ' + tiers.coins[i];
+        }).join('　')]
+      ];
+      this.els.timedStats.innerHTML = rows.map(function (r) {
+        return '<div class="ms-row"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
+      }).join('');
     },
 
     /* ---------- 每日任务 ---------- */
@@ -580,22 +650,36 @@
       if (!data) return;
       const self = this;
       const win = data.win;
-      this.els.resTitle.textContent = win ? I18N.t('win') : I18N.t('lose');
-      const tips = I18N.t(win ? 'winTips' : 'loseTips');
-      const tipList = Array.isArray(tips) ? tips : [tips];
-      this.els.resTip.textContent = tipList[(Math.random() * tipList.length) | 0];
+      const mode = data.mode || null;
+      if (mode === 'endless') {
+        this.els.resTitle.textContent = I18N.t('endlessOver');
+        this.els.resTip.textContent = I18N.t('endlessOverTip', { n: data.stage });
+      } else if (mode === 'timed') {
+        this.els.resTitle.textContent = I18N.t('timedOver');
+        this.els.resTip.textContent = I18N.t('timedOverTip');
+      } else {
+        this.els.resTitle.textContent = win ? I18N.t('win') : I18N.t('lose');
+        const tips = I18N.t(win ? 'winTips' : 'loseTips');
+        const tipList = Array.isArray(tips) ? tips : [tips];
+        this.els.resTip.textContent = tipList[(Math.random() * tipList.length) | 0];
+      }
+      U.show(this.els.resStars, !mode);
       this.els.resScore.textContent = U.fmt(data.score);
-      this.els.resBest.textContent = I18N.t('bestScore') + ' ' + U.fmt(data.best || 0);
+      this.els.resBest.textContent = mode === 'endless'
+        ? I18N.t('bestStage') + ' ' + (data.best || 0) + ' ' + I18N.t('stageUnit')
+        : I18N.t('bestScore') + ' ' + U.fmt(data.best || 0);
       U.show(this.els.resBadge, !!data.newBest);
       if (data.newBest) this.els.resBadge.textContent = I18N.t('newBest');
 
       /* 金币与备注 */
-      U.show(this.els.resCoinRow, !!win);
-      if (win) this.els.resCoins.textContent = '+' + U.fmt(data.coins || 0);
+      U.show(this.els.resCoinRow, !!(win || (data.coins > 0)));
+      this.els.resCoins.textContent = '+' + U.fmt(data.coins || 0);
       const notes = [];
       if (data.milestone > 0) notes.push(I18N.t('milestoneNote', { n: U.fmt(data.milestoneCoins * data.milestone) }));
       if (data.coinsCapped) notes.push(I18N.t('coinsCapped'));
       if (data.replay) notes.push(I18N.t('replayNote'));
+      if (mode === 'endless') notes.push(I18N.t('endlessCoinNote', { n: LL.Modes.CFG.endless.coinsPerStage }));
+      if (mode === 'timed') notes.push(I18N.t('timedCoinNote', { n: LL.Modes.CFG.timed.coins.join(' / ') }));
       if (notes.length) {
         this.els.resNote.textContent = notes.join('　·　');
         U.show(this.els.resNote, true);
@@ -616,7 +700,8 @@
         }, 300 + i * 120);
       }
 
-      this.els.btnResNext.textContent = data.isLast ? I18N.t('toMap') : I18N.t('next');
+      this.els.btnResNext.textContent = mode ? I18N.t('playAgain')
+        : (data.isLast ? I18N.t('toMap') : I18N.t('next'));
       U.show(this.els.result, true);
       void self;
     },
