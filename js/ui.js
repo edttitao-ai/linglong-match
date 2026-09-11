@@ -69,7 +69,13 @@
         paneEndless: $('#paneEndless'),
         paneTimed: $('#paneTimed'),
         endlessStats: $('#endlessStats'),
-        timedStats: $('#timedStats')
+        timedStats: $('#timedStats'),
+        paneAchievements: $('#paneAchievements'),
+        scrollArt: $('#scrollArt'),
+        scrollTitle: $('#scrollTitle'),
+        scrollHint: $('#scrollHint'),
+        achHead: $('#achHead'),
+        achList: $('#achList')
       };
 
       /* 标题页 */
@@ -294,7 +300,10 @@
     /* ---------- 关卡地图的模式分页 ---------- */
 
     showTab(tab) {
-      const panes = { campaign: this.els.paneCampaign, endless: this.els.paneEndless, timed: this.els.paneTimed };
+      const panes = {
+        campaign: this.els.paneCampaign, endless: this.els.paneEndless,
+        timed: this.els.paneTimed, achievements: this.els.paneAchievements
+      };
       U.$$('#mapTabs button').forEach(function (btn) {
         btn.classList.toggle('on', btn.getAttribute('data-tab') === tab);
       });
@@ -303,7 +312,43 @@
       }
       if (tab === 'endless') this.buildEndlessPane();
       if (tab === 'timed') this.buildTimedPane();
+      if (tab === 'achievements') this.buildAchievementsPane();
       if (tab === 'campaign') this.buildBoostBar();
+    },
+
+    /* ---------- 成就与画卷 ---------- */
+
+    buildAchievementsPane() {
+      const P = LL.Progress;
+      const A = LL.Achievements;
+      const stars = P.totalStars();
+      const tier = A.scrollTier(stars);
+
+      /* 画卷：按星数逐层显现 */
+      U.$$('#scrollArt img').forEach(function (img) {
+        const n = parseInt(img.getAttribute('data-tier'), 10);
+        img.classList.toggle('on', n <= tier);
+      });
+      this.els.scrollTitle.textContent = I18N.t('scrollTitle');
+      const next = A.nextScrollGoal(stars);
+      this.els.scrollHint.textContent = next
+        ? I18N.t('scrollHint', { n: stars, m: next - stars })   /* m 是「还差多少」，不是门槛值 */
+        : I18N.t('scrollDone', { n: stars });
+
+      const got = P.achievementCount();
+      this.els.achHead.textContent = I18N.t('achHead', { n: got, m: A.LIST.length });
+      const list = this.els.achList;
+      list.innerHTML = '';
+      A.LIST.forEach(function (a) {
+        const on = !!P.achievementOf(a.id);
+        const row = U.el('div', 'ach-row' + (on ? ' on' : ''));
+        row.innerHTML =
+          '<img class="ach-icon" src="' + LL.Assets.path('ui_medal') + '" alt="">' +
+          '<div class="ach-body"><div class="ach-name">' + I18N.t('ach_' + a.id) + '</div>' +
+          '<div class="ach-desc">' + I18N.t('ach_' + a.id + '_d') + '</div></div>' +
+          '<div class="ach-coin">' + (on ? I18N.t('achGot') : '+' + a.coins) + '</div>';
+        list.appendChild(row);
+      });
     },
 
     buildEndlessPane() {

@@ -123,6 +123,7 @@
         <button type="button" data-tab="campaign" class="on" data-i18n="tabCampaign">关卡</button>
         <button type="button" data-tab="endless" data-i18n="tabEndless">无尽</button>
         <button type="button" data-tab="timed" data-i18n="tabTimed">限时</button>
+        <button type="button" data-tab="achievements" data-i18n="tabAchievements">成就</button>
       </div>
 
       <div class="tab-pane" id="paneCampaign">
@@ -150,6 +151,22 @@
           <div class="mode-stats" id="timedStats"></div>
           <button type="button" id="btnTimedStart" class="primary" data-i18n="modeStart">开始挑战</button>
         </div>
+      </div>
+
+      <div class="tab-pane hidden" id="paneAchievements">
+        <div class="scroll-card">
+          <div class="scroll-title" id="scrollTitle"></div>
+          <div class="scroll-art" id="scrollArt">
+            <img src="assets/img/scroll_l1.svg" alt="" data-tier="1">
+            <img src="assets/img/scroll_l2.svg" alt="" data-tier="2">
+            <img src="assets/img/scroll_l3.svg" alt="" data-tier="3">
+            <img src="assets/img/scroll_l4.svg" alt="" data-tier="4">
+            <img src="assets/img/scroll_l5.svg" alt="" data-tier="5">
+          </div>
+          <div class="scroll-hint" id="scrollHint"></div>
+        </div>
+        <div class="ach-head" id="achHead"></div>
+        <div class="ach-list" id="achList"></div>
       </div>
       <div class="roller bottom"></div>
     </div>
@@ -306,6 +323,7 @@
 <script src="js/daily.js"></script>
 <script src="js/quests.js"></script>
 <script src="js/modes.js"></script>
+<script src="js/achievements.js"></script>
 <script src="js/anim.js"></script>
 <script src="js/render.js"></script>
 <script src="js/hud.js"></script>

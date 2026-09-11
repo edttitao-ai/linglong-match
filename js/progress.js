@@ -15,6 +15,8 @@
     quests: { day: '', list: [], progress: [], claimed: [], rerolls: 0, bonusClaimed: false },
     endless: { bestStage: 0, bestScore: 0, weekKey: '', weekBest: 0, runs: 0 },
     timed: { best: 0, runs: 0 },
+    stats: { maxCascade: 0, specialsFired: 0, obstaclesBroken: 0, revives: 0 },
+    achievements: {},
     boosters: { moves: 0, wind: 0, shuffle: 0 },
     armed: { moves: false, wind: false, shuffle: false }
   };
@@ -192,6 +194,43 @@
         out.push({ dayKey: key, day: d, stars: this.dailyStars(key) });
       }
       return out;
+    },
+
+    /* ---------------- 统计与成就 ---------------- */
+
+    bumpStat(key, n) {
+      const s = this.data.stats || (this.data.stats = {});
+      if (!n || n < 0) return;
+      s[key] = (s[key] || 0) + n;
+    },
+
+    setStatMax(key, v) {
+      const s = this.data.stats || (this.data.stats = {});
+      if (v > (s[key] || 0)) s[key] = v;
+    },
+
+    /* 检查并解锁成就；返回新解锁的 [{id, coins}] 并自动发金币 */
+    checkAchievements() {
+      const got = LL.Achievements.newlyUnlocked(this);
+      if (!got.length) return [];
+      const out = [];
+      const now = Date.now();
+      const self = this;
+      got.forEach(function (a) {
+        self.data.achievements[a.id] = now;
+        self.addCoins(a.coins, false);      /* 成就一次性，不占每日上限 */
+        out.push({ id: a.id, coins: a.coins });
+      });
+      this.save();
+      return out;
+    },
+
+    achievementOf(id) { return this.data.achievements[id] || 0; },
+    achievementCount() {
+      let n = 0;
+      const got = this.data.achievements || {};
+      for (const k in got) if (Object.prototype.hasOwnProperty.call(got, k) && got[k]) n++;
+      return n;
     },
 
     /* ---------------- 无尽 / 限时 ---------------- */

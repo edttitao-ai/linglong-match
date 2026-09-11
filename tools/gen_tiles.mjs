@@ -424,6 +424,52 @@ function ridgePath(pts, base) {
   return d;
 }
 
+/* 画卷：5 层水墨，按累计星数逐层显现（远山 → 中景 → 近山 → 松林 → 明月归鸟） */
+function scrollLayer(n) {
+  const S = (d, extra) => `<path d="${d}" ${extra || ''}/>`;
+  const layers = {
+    1: `<g opacity="0.30" fill="#7E9A82">${S('M0 150 L40 108 L74 138 L116 92 L158 134 L196 104 L238 140 L282 112 L320 146 L320 200 L0 200 Z')}</g>`,
+    2: `<g opacity="0.42" fill="#4A6B52">${S('M0 172 L36 132 L70 158 L110 118 L150 156 L190 126 L232 160 L276 130 L320 166 L320 200 L0 200 Z')}</g>`,
+    3: `<g opacity="0.55" fill="#2F4A3A">${S('M0 196 L44 160 L86 184 L130 146 L176 186 L220 158 L266 188 L320 164 L320 200 L0 200 Z')}</g>`,
+    4: `<g opacity="0.75" fill="#22382C">
+      ${S('M28 200 L28 176 L22 182 L28 170 L34 182 L28 176 Z')}
+      ${S('M44 200 L44 168 L36 176 L44 160 L52 176 L44 168 Z')}
+      ${S('M58 200 L58 180 L52 186 L58 174 L64 186 L58 180 Z')}
+      ${S('M262 200 L262 170 L254 178 L262 162 L270 178 L262 170 Z')}
+      ${S('M278 200 L278 182 L272 188 L278 176 L284 188 L278 182 Z')}
+      ${S('M292 200 L292 172 L284 180 L292 164 L300 180 L292 172 Z')}
+      <rect x="20" y="196" width="300" height="4" rx="2"/>
+    </g>`,
+    5: `<g opacity="0.85">
+      <circle cx="256" cy="52" r="18" fill="none" stroke="#8A6A3A" stroke-width="1.6"/>
+      <path d="M250 46 a8 8 0 0 0 0 12 a10 10 0 0 1 0 -12" fill="#8A6A3A" opacity="0.5"/>
+      <g fill="none" stroke="#3A3226" stroke-width="1.3" stroke-linecap="round" opacity="0.8">
+        <path d="M96 62 q6 -5 12 0 q6 -5 12 0"/>
+        <path d="M132 48 q5 -4 10 0 q5 -4 10 0"/>
+        <path d="M70 84 q5 -4 10 0"/>
+      </g>
+      <g opacity="0.85">
+        <path d="M172 200 L172 176 L166 182 L172 168 L178 182 L172 176 Z" fill="#22382C"/>
+        <path d="M164 176 q8 -14 16 0 q-8 -6 -16 0" fill="#2F4A3A"/>
+        <path d="M186 200 L186 180 L181 185 L186 173 L191 185 L186 180 Z" fill="#22382C"/>
+        <path d="M180 182 q7 -12 14 0 q-7 -5 -14 0" fill="#2F4A3A"/>
+      </g>
+    </g>`
+  };
+  return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">${layers[n] || ''}</svg>
+`;
+}
+
+/* 成就徽记：一枚描金云纹牌 */
+function iconMedal() {
+  return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <circle cx="12" cy="10" r="7.5" fill="none" stroke="${GOLD}" stroke-width="2"/>
+  <circle cx="12" cy="10" r="4.4" fill="rgba(201,162,39,0.22)" stroke="${GOLD}" stroke-width="1"/>
+  <path d="M8.5 16.5 L6.5 22 L12 19.5 L17.5 22 L15.5 16.5" fill="${CINNABAR}" opacity="0.85"/>
+</svg>
+`;
+}
+
 function bgMountains() {
   const far = [[0, 266], [150, 148], [340, 236], [570, 138], [810, 228], [1040, 156], [1270, 242], [1510, 168], [1760, 232], [1920, 190]];
   const mid = [[0, 322], [120, 212], [330, 302], [580, 176], [820, 286], [1080, 206], [1320, 298], [1560, 192], [1800, 270], [1920, 234]];
@@ -540,6 +586,12 @@ const files = {
   'ui_corner_br.svg': panelCorner('br'),
   'bg_paper.svg': bgPaper(),
   'bg_mountains.svg': bgMountains(),
+  'scroll_l1.svg': scrollLayer(1),
+  'scroll_l2.svg': scrollLayer(2),
+  'scroll_l3.svg': scrollLayer(3),
+  'scroll_l4.svg': scrollLayer(4),
+  'scroll_l5.svg': scrollLayer(5),
+  'ui_medal.svg': iconMedal(),
   'board_frame.svg': boardFrame()
 };
 

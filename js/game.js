@@ -256,6 +256,10 @@
       }
       if (ev.cascade > (this.maxCascade || 0)) this.maxCascade = ev.cascade;
       LL.Progress.addQuestProgress(qev);
+      /* 成就用的累计统计 */
+      LL.Progress.bumpStat('specialsFired', qev.specialsFired);
+      LL.Progress.bumpStat('obstaclesBroken', qev.obstaclesBroken);
+      LL.Progress.setStatMax('maxCascade', ev.cascade || 0);
     },
 
     /* 开局道具的横幅提示文案 */
@@ -416,8 +420,10 @@
         : LL.Progress.recordTimed(this.score);
       const payout = LL.Progress.addCoins(coins);
       LL.Progress.save();
+      const unlockedAch = LL.Progress.checkAchievements();
       this.lastResult = {
         win: false,
+        achievements: unlockedAch,
         mode: isEndless ? 'endless' : 'timed',
         score: this.score,
         stage: this.endlessStage,
@@ -509,10 +515,12 @@
       const questsBefore = LL.Progress.questState().claimable;
       LL.Progress.addQuestProgress({ win: true, stars: stars, revived: (this.reviveUsed || 0) > 0 });
       const questsAfter = LL.Progress.questState().claimable;
+      const unlockedAch = LL.Progress.checkAchievements();
 
       this.lastResult = {
         win: true, score: this.score, stars: stars,
         questsNew: Math.max(0, questsAfter - questsBefore),
+        achievements: unlockedAch,
         level: this.level, levelIndex: this.levelIndex,
         daily: isDaily, dailyFirst: dailyFirst,
         newBest: isDaily ? dailyNewBest : rec.newBest,
@@ -574,6 +582,7 @@
       this.pendingRevive = null;
       this.reviveUsed = (this.reviveUsed || 0) + 1;
       LL.Progress.addRevive(this.level.id);
+      LL.Progress.bumpStat('revives', 1);
       this.movesLeft += offer.moves;
       LL.HUD.setMoves(this.movesLeft);
       this.state = 'playing';
