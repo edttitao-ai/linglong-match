@@ -57,6 +57,8 @@
       this.hint = null;
       this.idleT = 0;
       this.lastResult = null;
+      this.pendingRevive = null;
+      this.reviveUsed = 0;          /* 本次挑战内的续步次数（每次开始关卡重置） */
       LL.Anim.reset();
       LL.HUD.setup(level, this.obstTotal);
       LL.HUD.setScore(0);
@@ -295,6 +297,18 @@
       }
     },
 
+    /* 目标完成度（0~1，多目标取平均）——续步只在快接近目标时才提供 */
+    progressRatio() {
+      const list = this.progressList();
+      if (!list.length) return 0;
+      let sum = 0;
+      for (let i = 0; i < list.length; i++) {
+        const o = list[i];
+        sum += o.target > 0 ? Math.min(1, o.cur / o.target) : 1;
+      }
+      return sum / list.length;
+    },
+
     win() {
       this.state = 'won';
       const bonus = this.movesLeft * CFG.SCORE_MOVE_LEFT;
@@ -307,14 +321,35 @@
       }
       LL.Audio.play('win');
       LL.Anim.addFlash(0.2);
+
       const stars = this.starsFor(this.score);
+      const prevStars = LL.Progress.starsOf(this.level.id);
+      const starsBefore = LL.Progress.totalStars();
+
+      /* 金币：首通按星级全额，重玩旧关只按 30% 产出（防止刷旧关） */
+      const base = CFG.ECON.STAR_COINS[Math.max(0, Math.min(2, stars - 1))];
+      const rate = prevStars > 0 ? CFG.ECON.REPLAY_RATE : 1;
+      let coins = Math.round(base * rate);
+
       const rec = LL.Progress.record(this.level.id, stars, this.score);
+      const starsAfter = LL.Progress.totalStars();
+      const milestone = Math.floor(starsAfter / CFG.ECON.MILESTONE_EVERY) -
+        Math.floor(starsBefore / CFG.ECON.MILESTONE_EVERY);
+      if (milestone > 0) coins += CFG.ECON.MILESTONE_COINS * milestone;
+
+      const payout = LL.Progress.addCoins(coins);
+      LL.Progress.save();
+
       this.lastResult = {
         win: true, score: this.score, stars: stars,
         level: this.level, levelIndex: this.levelIndex,
         newBest: rec.newBest, unlockedNext: rec.unlockedNext,
         best: LL.Progress.bestOf(this.level.id),
-        isLast: this.levelIndex >= LL.LEVELS.length - 1
+        isLast: this.levelIndex >= LL.LEVELS.length - 1,
+        coins: payout.added, coinsWanted: coins, coinsCapped: payout.capped,
+        milestone: milestone, milestoneCoins: CFG.ECON.MILESTONE_COINS,
+        replay: prevStars > 0,
+        coinTotal: LL.Progress.data.coins
       };
       this.resultTimer = setTimeout(function () {
         if (self.state === 'won') LL.UI.showResult(self.lastResult);
@@ -329,11 +364,57 @@
         win: false, score: this.score, stars: 0,
         level: this.level, levelIndex: this.levelIndex,
         best: LL.Progress.bestOf(this.level.id),
-        isLast: this.levelIndex >= LL.LEVELS.length - 1
+        isLast: this.levelIndex >= LL.LEVELS.length - 1,
+        coinTotal: LL.Progress.data.coins
       };
-      this.resultTimer = setTimeout(function () {
-        if (self.state === 'lost') LL.UI.showResult(self.lastResult);
-      }, 900);
+      const offer = this.reviveOffer();
+      if (offer) {
+        this.pendingRevive = offer;
+        this.resultTimer = setTimeout(function () {
+          if (self.state === 'lost') LL.UI.showRevive(offer);
+        }, 950);
+      } else {
+        this.resultTimer = setTimeout(function () {
+          if (self.state === 'lost') LL.UI.showResult(self.lastResult);
+        }, 900);
+      }
+    },
+
+    /* ---------------- 续步救援 ----------------
+     * 只把「差一点」变成继续玩：完成度不足、或买不起时不推销，
+     * 同一次挑战内第 3 次直接免费送（怜悯机制，避免逼氪感）。 */
+
+    reviveOffer() {
+      const R = CFG.ECON.REVIVE;
+      if (this.progressRatio() < R.minProgress) return null;
+      const used = this.reviveUsed || 0;
+      const free = (used + 1) >= R.freeFrom;
+      const cost = free ? 0 : (R.cost + R.step * used);
+      if (!free && LL.Progress.data.coins < cost) return null;
+      return { cost: cost, free: free, moves: R.moves, used: used, ratio: this.progressRatio() };
+    },
+
+    revive() {
+      const offer = this.pendingRevive;
+      if (!offer) return false;
+      if (offer.cost > 0 && !LL.Progress.spendCoins(offer.cost)) return false;
+      this.pendingRevive = null;
+      this.reviveUsed = (this.reviveUsed || 0) + 1;
+      LL.Progress.addRevive(this.level.id);
+      this.movesLeft += offer.moves;
+      LL.HUD.setMoves(this.movesLeft);
+      this.state = 'playing';
+      LL.UI.hideRevive();
+      LL.Audio.play('star', { rate: 1.05, vol: 0.9 });
+      LL.HUD.banner('+' + offer.moves + ' ' + I18N.t('moves'), I18N.t('reviveGo'), 1400);
+      this.notifyInput();
+      return true;
+    },
+
+    declineRevive() {
+      this.pendingRevive = null;
+      LL.UI.hideRevive();
+      LL.UI.showResult(this.lastResult);
     },
 
     /* ---------------- 暂停 ---------------- */

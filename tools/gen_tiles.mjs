@@ -325,6 +325,22 @@ function iconSound(muted) {
 `;
 }
 
+/* 金币：与「铜钱」棋子同源，方便玩家建立联想 */
+function iconCoin() {
+  return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6DC8E"/><stop offset="1" stop-color="#D9A63C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="12" cy="12" r="10.4" fill="url(#cg)" stroke="#8A5E14" stroke-width="1.7"/>
+  <circle cx="12" cy="12" r="8.2" fill="none" stroke="#8A5E14" stroke-width="0.9" opacity="0.5"/>
+  <rect x="9.2" y="9.2" width="5.6" height="5.6" rx="0.7" fill="none" stroke="#8A5E14" stroke-width="1.6"/>
+  <path d="M12.6 3.4 a8.8 8.8 0 0 1 5.9 2.5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
+`;
+}
+
 function iconBack() {
   return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
   <path d="M14.4 4.2 L6.2 12 L14.4 19.8" fill="none" stroke="${INK}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -478,6 +494,7 @@ const files = {
   'ui_star.svg': star(true),
   'ui_star_off.svg': star(false),
   'ui_lock.svg': lock(),
+  'ui_coin.svg': iconCoin(),
   'ui_pause.svg': iconPause(),
   'ui_sound.svg': iconSound(false),
   'ui_mute.svg': iconSound(true),

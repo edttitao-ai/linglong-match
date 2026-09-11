@@ -24,6 +24,7 @@
     ui_star: 'ui_star.svg',
     ui_star_off: 'ui_star_off.svg',
     ui_lock: 'ui_lock.svg',
+    ui_coin: 'ui_coin.svg',
     ui_pause: 'ui_pause.svg',
     ui_sound: 'ui_sound.svg',
     ui_mute: 'ui_mute.svg',

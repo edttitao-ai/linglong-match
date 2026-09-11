@@ -5,7 +5,12 @@
   const CFG = LL.CFG;
   const U = LL.U;
 
-  const DEFAULT_DATA = { stars: {}, best: {}, unlocked: 1, plays: 0 };
+  const DEFAULT_DATA = {
+    stars: {}, best: {}, unlocked: 1, plays: 0,
+    coins: 0,
+    day: { key: '', earned: 0 },   // 当日金币产出（受上限约束）
+    revive: {}                      // 每关累计使用过的续步次数
+  };
   const DEFAULT_SET = { volume: 0.8, muted: false, lang: 'zh' };
 
   function load(key, def) {
@@ -54,6 +59,63 @@
         starsGained: Math.max(0, stars - prevStars),
         unlockedNext: unlockedNext
       };
+    },
+
+    /* ---------------- 金币 ---------------- */
+
+    /* 本地日期键（每日上限、签到、每日挑战都以它为准） */
+    todayKey(d) {
+      const dt = d || new Date();
+      const m = dt.getMonth() + 1;
+      const day = dt.getDate();
+      return dt.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    },
+
+    /* 跨天则重置当日产出计数 */
+    ensureDay() {
+      const key = this.todayKey();
+      if (this.data.day.key !== key) {
+        this.data.day = { key: key, earned: 0 };
+        this.save();
+      }
+      return key;
+    },
+
+    coinsLeftToday() {
+      this.ensureDay();
+      return Math.max(0, CFG.ECON.DAY_CAP - this.data.day.earned);
+    },
+
+    /* 加金币（受每日上限约束）；返回 { added, capped } */
+    addCoins(n, countTowardCap) {
+      if (n <= 0) return { added: 0, capped: false };
+      this.ensureDay();
+      let added = n;
+      let capped = false;
+      if (countTowardCap !== false) {
+        const left = this.coinsLeftToday();
+        if (n > left) { added = left; capped = true; }
+        this.data.day.earned += added;
+      }
+      this.data.coins += added;
+      this.save();
+      return { added: added, capped: capped };
+    },
+
+    spendCoins(n) {
+      if (this.data.coins < n) return false;
+      this.data.coins -= n;
+      this.save();
+      return true;
+    },
+
+    /* ---------------- 续步（救援） ---------------- */
+
+    reviveCountOf(id) { return this.data.revive[id] || 0; },
+    addRevive(id) {
+      this.data.revive[id] = this.reviveCountOf(id) + 1;
+      this.save();
+      return this.data.revive[id];
     },
 
     resetAll() {

@@ -74,6 +74,10 @@
       <h1 class="game-title" data-i18n="title">玲珑消</h1>
       <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
       <div class="sub" data-i18n="subtitle">三 消 · 国 风</div>
+      <div class="coin-pill" id="titleCoins">
+        <img src="assets/img/ui_coin.svg" alt="">
+        <b>0</b>
+      </div>
       <div class="btn-col">
         <button id="btnPlay" class="primary" data-i18n="play">开始游戏</button>
         <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
@@ -92,6 +96,10 @@
           <img src="assets/img/ui_back.svg" alt="">
         </button>
         <h2 data-i18n="selectLevel">选择关卡</h2>
+        <div class="coin-pill" id="mapCoins">
+          <img src="assets/img/ui_coin.svg" alt="">
+          <b>0</b>
+        </div>
         <div class="star-total" id="mapStars"></div>
       </div>
       <img class="cloud-rule map-rule" src="assets/img/ui_cloud.svg" alt="">
@@ -129,7 +137,11 @@
       <div class="res-rows">
         <div class="res-row"><span data-i18n="finalScore">本关得分</span><b id="resScore">0</b></div>
         <div class="res-row small"><span data-i18n="bestScore">最高分</span><b id="resBest">0</b></div>
+        <div class="res-row small" id="resCoinRow">
+          <span data-i18n="coinsEarned">获得金币</span><b id="resCoins">+0</b>
+        </div>
       </div>
+      <div class="res-note hidden" id="resNote"></div>
       <div class="btn-col">
         <button id="btnResNext" class="primary" data-i18n="next">下一关</button>
         <div class="btn-row">
@@ -159,6 +171,20 @@
       </div>
       <button id="btnReset" class="ghost danger wide" data-i18n="resetProgress">清除进度</button>
       <button id="btnSetClose" class="primary" data-i18n="close">关闭</button>
+    </div>
+  </div>
+
+  <!-- 失败救援（续步） -->
+  <div id="revive" class="overlay hidden">
+    <div class="panel revive-panel">
+      <h2 data-i18n="reviveTitle">差一点就过了！</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <p class="revive-msg" id="reviveMsg"></p>
+      <div class="revive-cost" id="reviveCost"></div>
+      <div class="btn-col">
+        <button id="btnReviveYes" class="primary"></button>
+        <button id="btnReviveNo" class="ghost" data-i18n="reviveNo">放弃本局</button>
+      </div>
     </div>
   </div>
 

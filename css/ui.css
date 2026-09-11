@@ -268,6 +268,7 @@
 
 #pause { z-index: 55; }
 #result { z-index: 56; }
+#revive { z-index: 57; }
 #settings { z-index: 58; }
 #confirm { z-index: 70; }
 #loading { z-index: 60; }
@@ -615,6 +616,64 @@
   background: linear-gradient(180deg, var(--cinnabar-hi), var(--cinnabar));
   box-shadow: 0 2px 6px rgba(120, 30, 20, 0.4);
   white-space: nowrap;
+}
+
+/* ================= 金币与续步 ================= */
+
+.coin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 13px 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 253, 246, 0.94);
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  box-shadow: 0 2px 0 rgba(122, 92, 52, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold-lo);
+  font-variant-numeric: tabular-nums;
+}
+
+.coin-pill img { width: 18px; height: 18px; }
+
+.title-wrap .coin-pill { margin: 6px auto 0; }
+.map-head .coin-pill { margin-left: auto; }
+
+.revive-panel { width: min(340px, 92vw); gap: 12px; }
+
+.revive-msg {
+  margin: 0;
+  text-align: center;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.revive-cost {
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(255, 253, 246, 0.9);
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold-lo);
+}
+
+.res-note {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--gold-lo);
+}
+
+.primary.disabled, .primary:disabled {
+  filter: grayscale(0.45) brightness(0.96);
+  box-shadow: 0 2px 0 rgba(90, 30, 20, 0.35);
+  cursor: not-allowed;
 }
 
 /* ================= 结算 ================= */

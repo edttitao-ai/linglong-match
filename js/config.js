@@ -65,6 +65,23 @@
     HINT_DELAY: 5200,       // 空闲多久给出提示
     ACCEL_SCALE: 3.2,       // 点击加速倍率
 
+    /* 经济与留存系统
+     * 铁律：金币只能买「重试的机会」，不能买「永久的强」——否则关卡数值验证全部作废。 */
+    ECON: {
+      STAR_COINS: [10, 20, 35],   // 1/2/3 星通关的金币
+      REPLAY_RATE: 0.3,           // 重玩已通关的关卡只按 30% 产出（防刷）
+      DAY_CAP: 250,               // 每日金币产出上限（防通胀）
+      MILESTONE_EVERY: 10,        // 每累计 N 星
+      MILESTONE_COINS: 100,       // 给一次里程碑奖励
+      REVIVE: {
+        cost: 120,                // 首次续步价格
+        step: 60,                 // 同一次挑战内每多买一次加价
+        moves: 5,                 // 续步给多少步
+        minProgress: 0.7,         // 目标完成度低于此值时不提供（不骗人）
+        freeFrom: 3               // 第 3 次直接送（怜悯机制）
+      }
+    },
+
     STORAGE_KEY: 'linglong.progress.v1',
     SETTINGS_KEY: 'linglong.settings.v1'
   };

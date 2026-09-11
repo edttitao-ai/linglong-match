@@ -59,6 +59,23 @@
     winTips: ['玲珑在手，妙不可言', '一气呵成，酣畅淋漓', '方寸之间，尽显从容'],
     loseTips: ['再试一次，必有妙手', '差之毫厘，再来一局', '换个思路，柳暗花明'],
 
+    /* 金币与续步 */
+    coins: '金币',
+    coinsEarned: '获得金币',
+    coinsCapped: '（今日金币已达上限）',
+    coinLeftToday: '今日还可获得 {n} 金币',
+    milestoneNote: '星数里程碑 · 额外 +{n} 金币',
+    replayNote: '重玩关卡金币按 30% 计',
+    reviveTitle: '差一点就过了！',
+    reviveMsg: '本局目标已完成 {n}%，再给你 {m} 步，继续冲一次？',
+    reviveCost: '花费 {n} 金币',
+    reviveFree: '这次免费送你',
+    reviveBuy: '续步 · {n} 金币',
+    reviveBuyFree: '免费续步',
+    reviveGo: '继续！',
+    reviveNo: '放弃本局',
+    reviveNotEnough: '金币不足（还差 {n}）',
+
     /* 设置 */
     volume: '音量',
     sound: '音效',

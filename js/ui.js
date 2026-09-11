@@ -35,7 +35,16 @@
         resBest: $('#resBest'),
         resBadge: $('#resBadge'),
         btnResNext: $('#btnResNext'),
-        banner: $('#banner')
+        banner: $('#banner'),
+        revive: $('#revive'),
+        reviveMsg: $('#reviveMsg'),
+        reviveCost: $('#reviveCost'),
+        btnReviveYes: $('#btnReviveYes'),
+        resCoins: $('#resCoins'),
+        resCoinRow: $('#resCoinRow'),
+        resNote: $('#resNote'),
+        titleCoins: $('#titleCoins'),
+        mapCoins: $('#mapCoins')
       };
 
       /* 标题页 */
@@ -88,6 +97,18 @@
       });
       U.on($('#btnSetClose'), 'click', function () { LL.Audio.play('click'); self.hideSettings(); });
 
+      /* 失败救援（续步） */
+      U.on($('#btnReviveYes'), 'click', function () {
+        if (!LL.Game.revive()) {
+          self.updateCoins();
+          self.refreshReviveCost();
+        }
+      });
+      U.on($('#btnReviveNo'), 'click', function () {
+        LL.Audio.play('click');
+        LL.Game.declineRevive();
+      });
+
       /* 确认框 */
       U.on($('#btnConfirmYes'), 'click', function () {
         LL.Audio.play('click');
@@ -114,11 +135,13 @@
       if (name !== 'game') {
         U.show(this.els.pause, false);
         U.show(this.els.result, false);
+        U.show(this.els.revive, false);
       }
       if (name !== 'game' && name !== 'settings') U.show(this.els.settings, false);
       U.show(this.els.hud, name === 'game');
       if (name === 'game') LL.HUD.hideBanner();
       if (name === 'map') this.buildMap();
+      this.updateCoins();
       /* 信息栏的显隐会改变棋盘可用区域，必须重新排版画布 */
       LL.Render.resize();
     },
@@ -191,10 +214,46 @@
       void self;
     },
 
-    /* ---------- 暂停 ---------- */
+    /* ---------- 金币显示 ---------- */
 
-    showPause() { U.show(this.els.pause, true); },
-    hidePause() { U.show(this.els.pause, false); },
+    updateCoins() {
+      const n = LL.Progress.data.coins || 0;
+      [this.els.titleCoins, this.els.mapCoins].forEach(function (pill) {
+        if (!pill) return;
+        const b = pill.querySelector('b');
+        if (b) b.textContent = U.fmt(n);
+      });
+    },
+
+    /* ---------- 失败救援（续步） ---------- */
+
+    showRevive(offer) {
+      if (!offer) return;
+      this.els.reviveMsg.textContent = I18N.t('reviveMsg', {
+        n: Math.round(offer.ratio * 100), m: offer.moves
+      });
+      this.refreshReviveCost(offer);
+      U.show(this.els.revive, true);
+      this.updateCoins();
+    },
+
+    refreshReviveCost(offer) {
+      const o = offer || LL.Game.pendingRevive;
+      if (!o) return;
+      const coins = LL.Progress.data.coins || 0;
+      if (o.free) {
+        this.els.reviveCost.textContent = I18N.t('reviveFree');
+        this.els.btnReviveYes.textContent = I18N.t('reviveBuyFree');
+      } else {
+        this.els.reviveCost.textContent = I18N.t('reviveCost', { n: U.fmt(o.cost) }) +
+          '　·　' + I18N.t('coins') + ' ' + U.fmt(coins);
+        this.els.btnReviveYes.textContent = I18N.t('reviveBuy', { n: U.fmt(o.cost) });
+      }
+      this.els.btnReviveYes.disabled = !o.free && coins < o.cost;
+      this.els.btnReviveYes.classList.toggle('disabled', this.els.btnReviveYes.disabled);
+    },
+
+    hideRevive() { U.show(this.els.revive, false); },
 
     /* ---------- 结算 ---------- */
 
@@ -210,6 +269,21 @@
       this.els.resBest.textContent = I18N.t('bestScore') + ' ' + U.fmt(data.best || 0);
       U.show(this.els.resBadge, !!data.newBest);
       if (data.newBest) this.els.resBadge.textContent = I18N.t('newBest');
+
+      /* 金币与备注 */
+      U.show(this.els.resCoinRow, !!win);
+      if (win) this.els.resCoins.textContent = '+' + U.fmt(data.coins || 0);
+      const notes = [];
+      if (data.milestone > 0) notes.push(I18N.t('milestoneNote', { n: U.fmt(data.milestoneCoins * data.milestone) }));
+      if (data.coinsCapped) notes.push(I18N.t('coinsCapped'));
+      if (data.replay) notes.push(I18N.t('replayNote'));
+      if (notes.length) {
+        this.els.resNote.textContent = notes.join('　·　');
+        U.show(this.els.resNote, true);
+      } else {
+        U.show(this.els.resNote, false);
+      }
+      this.updateCoins();
 
       /* 视觉的逐颗点亮由 CSS 的 animation-delay 负责（0 / .12s / .24s），
        * 这里只负责让音效跟着同一节奏响起 */
