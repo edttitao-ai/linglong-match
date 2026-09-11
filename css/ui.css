@@ -266,12 +266,17 @@
   animation: fadeIn 0.26s ease-out;
 }
 
+/* 弹层叠放次序：不能指望 DOM 顺序——.overlay 的统一 z-index 会盖过它，
+ * 每个新弹层都必须在这条梯子上占一格，否则会出现「新面板被旧面板盖住」。
+ * 梯子：对局内提示 57 < 可叠在暂停上方的说明 59 < 加载 60 < 确认框 70（永远最上）。 */
 #pause { z-index: 55; }
 #result { z-index: 56; }
 #revive { z-index: 57; }
+#lastStand { z-index: 57; }     /* 对局内提示，与续步同级 */
 #settings { z-index: 58; }
-#confirm { z-index: 70; }
+#skillIntro { z-index: 59; }    /* 可从暂停面板里打开，所以必须高于 pause */
 #loading { z-index: 60; }
+#confirm { z-index: 70; }       /* 任何面板都可能弹确认框，永远最上 */
 
 .panel {
   position: relative;

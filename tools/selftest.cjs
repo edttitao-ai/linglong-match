@@ -843,6 +843,60 @@ section('10. 素材完整性');
     (orphans.length ? '：' + orphans.slice(0, 8).join(' | ') : ''));
 }
 
+/* ---------- 11. 弹层叠放次序 ----------
+ * 起因：技能说明面板 `#skillIntro` 加进 DOM 时没进 z-index 梯子，于是落到 .overlay
+ * 的默认层 50，被暂停面板（55）盖在下面——从暂停里点「技能说明」，面板在底下弹出来，
+ * 玩家只看到暂停面板。所有 .overlay 都是同一个 z-index，DOM 顺序救不了。
+ * 所以：能叠在别的弹层上面的，必须显式在梯子上占一格。 */
+section('11. 弹层叠放次序');
+{
+  const fsMod = require('fs');
+  const htmlSrc = fsMod.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const cssSrc = fsMod.readFileSync(path.join(__dirname, '..', 'css', 'ui.css'), 'utf8');
+
+  const overlays = [];
+  const ovRe = /<div id="([A-Za-z0-9_]+)" class="overlay/g;
+  let m;
+  while ((m = ovRe.exec(htmlSrc))) overlays.push(m[1]);
+  ok(overlays.length >= 10, '找到 ' + overlays.length + ' 个弹层');
+
+  /* 解析每个 #id { ... } 块里的 z-index（写成几行也认） */
+  const ladder = {};
+  const blockRe = /#([A-Za-z0-9_]+)\s*\{([^}]*)\}/g;
+  while ((m = blockRe.exec(cssSrc))) {
+    const z = /z-index:\s*(\d+)/.exec(m[2]);
+    if (z && ladder[m[1]] == null) ladder[m[1]] = parseInt(z[1], 10);
+  }
+
+  /* 「整屏页面」彼此互斥、永远不会同时出现，留在默认层 50 是对的；
+   * 其余弹层都可能叠在别人身上，必须显式排级。 */
+  const BASE_LAYER = ['title', 'map', 'daily', 'quests', 'checkin'];
+  const missing = overlays.filter(function (id) {
+    return BASE_LAYER.indexOf(id) < 0 && ladder[id] == null;
+  });
+  eq(missing.length, 0, '除基础整屏页外的弹层都在 z-index 梯子上' +
+    (missing.length ? '：' + missing.join(' | ') + '（会落到默认层 50，被别的弹层盖住）' : '') +
+    '（弹层 ' + overlays.length + ' 个 / 梯子 ' + Object.keys(ladder).filter(function (k) { return overlays.indexOf(k) >= 0; }).length + ' 级）');
+
+  /* 梯子上的 id 要能对上真实存在的元素——防手滑写成 #skillintro 这种不生效的规则。
+   * 非弹层的层（常驻 HUD）白名单放行；以后新增同类规则要在这里登记，是刻意的摩擦。 */
+  const NON_OVERLAY = ['hud'];
+  const ghost = Object.keys(ladder).filter(function (k) {
+    return overlays.indexOf(k) < 0 && NON_OVERLAY.indexOf(k) < 0;
+  });
+  eq(ghost.length, 0, '梯子上的 id 都对得上真实弹层' +
+    (ghost.length ? '：' + ghost.join(' | ') + '（写成不存在的 id 等于没写）' : ''));
+
+  /* 梯子自洽：确认框永远最上（任何面板都能弹确认框），
+   * 技能说明要能盖过暂停（它是从暂停里打开的）。 */
+  const others = Object.keys(ladder).filter(function (k) { return k !== 'confirm'; });
+  const maxOther = Math.max.apply(null, others.map(function (k) { return ladder[k]; }));
+  ok(ladder.confirm > maxOther, '确认框在梯子最上层（' + ladder.confirm + ' > ' + maxOther + '）');
+  ok(ladder.skillIntro > ladder.pause,
+    '技能说明高于暂停面板（' + ladder.skillIntro + ' > ' + ladder.pause + '）——它就是从暂停里打开的');
+  ok(ladder.skillIntro < ladder.confirm, '技能说明低于确认框');
+}
+
 /* ---------- 汇总 ---------- */
 console.log('\n' + '─'.repeat(56));
 console.log('通过 ' + passed + ' 项，失败 ' + failed + ' 项');

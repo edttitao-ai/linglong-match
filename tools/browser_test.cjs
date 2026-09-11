@@ -589,19 +589,31 @@ const IMAGE_AUDIT = `(function () {
       !!tap.note && tap.note.indexOf('整行') >= 0, tap.note);
     await cdp.evaluate('LL.Game.cancelAim(); true');
 
-    /* 暂停面板能重看说明 */
+    /* 暂停面板能重看说明——这里必须验证「在最上层」而不只是「显示了」：
+     * 曾经 skillIntro 没进 z-index 梯子，被暂停面板(55)盖在下面，
+     * 只查 classList 的断言给了个假通过。用 elementFromPoint 取面板中心点最顶的元素才靠谱。 */
     const help = await cdp.evaluate(`(function () {
       LL.Game.pause();
       var btn = document.getElementById('btnPauseSkill');
       if (!btn) return { ok: false, why: '暂停面板没有技能说明按钮' };
       btn.click();
       var el = document.getElementById('skillIntro');
-      var ok = !el.classList.contains('hidden') && document.querySelectorAll('#skillIntroList .si-row').length === LL.Skills.order().length;
+      if (el.classList.contains('hidden')) return { ok: false, why: '面板没显示' };
+      if (document.querySelectorAll('#skillIntroList .si-row').length !== LL.Skills.order().length) {
+        return { ok: false, why: '条目数不对' };
+      }
+      var r = el.querySelector('.panel').getBoundingClientRect();
+      var top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      var onTop = !!(top && el.contains(top));
+      var blocker = onTop ? '' : (top ? (top.id || top.className || top.tagName) : 'null');
       LL.UI.hideSkillIntro();
+      var backToPause = !document.getElementById('pause').classList.contains('hidden');
       LL.Game.resume();
-      return { ok: ok, why: '' };
+      if (!onTop) return { ok: false, why: '被 ' + blocker + ' 盖住了' };
+      if (!backToPause) return { ok: false, why: '关闭后没回到暂停面板' };
+      return { ok: true, why: '' };
     })()`);
-    report('暂停面板可重看技能说明', help.ok, help.why);
+    report('暂停面板可重看技能说明，且说明面板在最上层', help.ok, help.why);
 
     /* 2. 技能演练（分步执行，每步之间等动画收束） */
     console.log('\n[2] 技能与灵力演练（第 19 关 · 石锁盘面）');
