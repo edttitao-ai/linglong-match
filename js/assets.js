@@ -32,6 +32,7 @@
     ui_skill_swap: 'ui_skill_swap.svg',
     ui_skill_color: 'ui_skill_color.svg',
     ui_skill_cross: 'ui_skill_cross.svg',
+    ui_medal: 'ui_medal.svg',
     ui_pause: 'ui_pause.svg',
     ui_sound: 'ui_sound.svg',
     ui_mute: 'ui_mute.svg',
@@ -42,7 +43,26 @@
     ui_corner_bl: 'ui_corner_bl.svg',
     ui_corner_br: 'ui_corner_br.svg',
     bg_paper: 'bg_paper.svg',
-    board_frame: 'board_frame.svg'
+    bg_mountains: 'bg_mountains.svg',
+    board_frame: 'board_frame.svg',
+    scroll_l1: 'scroll_l1.svg',
+    scroll_l2: 'scroll_l2.svg',
+    scroll_l3: 'scroll_l3.svg',
+    scroll_l4: 'scroll_l4.svg',
+    scroll_l5: 'scroll_l5.svg',
+    /* 成就徽记：键名 = 'ach_' + Achievements.LIST 里的 id（由自检第 10 节守门） */
+    ach_firstStar: 'ach_firstStar.svg',
+    ach_stars10: 'ach_stars10.svg',
+    ach_stars30: 'ach_stars30.svg',
+    ach_stars60: 'ach_stars60.svg',
+    ach_stars90: 'ach_stars90.svg',
+    ach_cascade8: 'ach_cascade8.svg',
+    ach_specials100: 'ach_specials100.svg',
+    ach_obst200: 'ach_obst200.svg',
+    ach_daily7: 'ach_daily7.svg',
+    ach_streak7: 'ach_streak7.svg',
+    ach_endless10: 'ach_endless10.svg',
+    ach_timed8k: 'ach_timed8k.svg'
   };
 
   /* 音效清单；连锁音是 7 个独立的音高文件（A 五声音阶逐层上行），不用变速播放 */
@@ -118,6 +138,9 @@
 
   A.IMAGE_LIST = Object.keys(IMAGES);
   A.SFX_LIST = Object.keys(SFX);
+  /* 清单本体也暴露出来：自检要做「代码里的键 ↔ 清单 ↔ 磁盘文件」三方对账 */
+  A.IMAGES = IMAGES;
+  A.SFX = SFX;
 
   LL.Assets = A;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -12,19 +12,22 @@
   /* 画卷层与星数门槛 */
   const SCROLL_TIERS = [10, 25, 45, 65, 90];
 
+  /* 徽记图形与成就一一对应（icon 键必须登记在 js/assets.js 的 IMAGES 里，
+   * 少了就会被 tools/selftest.cjs 第 10 节的素材完整性检查拦下）。
+   * 设计意图：未解锁时列表会降饱和到 50% 透明，所以每枚徽记靠轮廓区分，不靠颜色。 */
   const LIST = [
-    { id: 'firstStar', coins: 30, check: function (c) { return c.stars >= 1; } },
-    { id: 'stars10', coins: 50, check: function (c) { return c.stars >= 10; } },
-    { id: 'stars30', coins: 80, check: function (c) { return c.stars >= 30; } },
-    { id: 'stars60', coins: 120, check: function (c) { return c.stars >= 60; } },
-    { id: 'stars90', coins: 200, check: function (c) { return c.stars >= 90; } },
-    { id: 'cascade8', coins: 60, check: function (c) { return c.stats.maxCascade >= 8; } },
-    { id: 'specials100', coins: 60, check: function (c) { return c.stats.specialsFired >= 100; } },
-    { id: 'obst200', coins: 60, check: function (c) { return c.stats.obstaclesBroken >= 200; } },
-    { id: 'daily7', coins: 80, check: function (c) { return c.dailyDays >= 7; } },
-    { id: 'streak7', coins: 80, check: function (c) { return c.streakBest >= 7; } },
-    { id: 'endless10', coins: 100, check: function (c) { return c.endlessBest >= 10; } },
-    { id: 'timed8k', coins: 100, check: function (c) { return c.timedBest >= 8000; } }
+    { id: 'firstStar', icon: 'ach_firstStar', coins: 30, check: function (c) { return c.stars >= 1; } },
+    { id: 'stars10', icon: 'ach_stars10', coins: 50, check: function (c) { return c.stars >= 10; } },
+    { id: 'stars30', icon: 'ach_stars30', coins: 80, check: function (c) { return c.stars >= 30; } },
+    { id: 'stars60', icon: 'ach_stars60', coins: 120, check: function (c) { return c.stars >= 60; } },
+    { id: 'stars90', icon: 'ach_stars90', coins: 200, check: function (c) { return c.stars >= 90; } },
+    { id: 'cascade8', icon: 'ach_cascade8', coins: 60, check: function (c) { return c.stats.maxCascade >= 8; } },
+    { id: 'specials100', icon: 'ach_specials100', coins: 60, check: function (c) { return c.stats.specialsFired >= 100; } },
+    { id: 'obst200', icon: 'ach_obst200', coins: 60, check: function (c) { return c.stats.obstaclesBroken >= 200; } },
+    { id: 'daily7', icon: 'ach_daily7', coins: 80, check: function (c) { return c.dailyDays >= 7; } },
+    { id: 'streak7', icon: 'ach_streak7', coins: 80, check: function (c) { return c.streakBest >= 7; } },
+    { id: 'endless10', icon: 'ach_endless10', coins: 100, check: function (c) { return c.endlessBest >= 10; } },
+    { id: 'timed8k', icon: 'ach_timed8k', coins: 100, check: function (c) { return c.timedBest >= 8000; } }
   ];
 
   /* 汇总判定上下文 */

@@ -423,6 +423,134 @@ function iconSkill(kind) {
 `;
 }
 
+/* ---------- 成就徽记 ----------
+ * 12 个成就各有一枚独立图形。未解锁时列表会把它降饱和到 50% 透明，
+ * 所以**轮廓必须能单独表意**——不能靠颜色区分，也不能十二个长一个样。
+ * 统一步调：24×24 视图框、只取 2~4 个形状、粗描边，缩到 30px 仍然一眼可辨。 */
+
+/* 五角星路径（外径/内径可调，rot 弧度） */
+function starPath(cx, cy, rOut, rIn, rot) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const r = (i % 2) ? rIn : rOut;
+    const a = (rot || 0) + i * Math.PI / 5;
+    pts.push((cx + r * Math.sin(a)).toFixed(2) + ' ' + (cy - r * Math.cos(a)).toFixed(2));
+  }
+  return 'M' + pts.join(' L') + ' Z';
+}
+
+function iconAch(id) {
+  const head = HEAD + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">\n';
+  const tail = '</svg>\n';
+  const GOLD_HI = '#E8C86A';
+  const STONE = '#CFD6DC';
+
+  /* 初出茅庐：一颗星 + 起跑线 */
+  if (id === 'firstStar') {
+    return head +
+      `  <path d="${starPath(12, 10.2, 8.2, 3.5, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.4" stroke-linejoin="round"/>\n` +
+      `  <path d="M4.6 21.2 h14.8" fill="none" stroke="${INK}" stroke-width="1.9" stroke-linecap="round" opacity="0.7"/>\n` + tail;
+  }
+  /* 小有所成：三颗小星 */
+  if (id === 'stars10') {
+    return head +
+      `  <path d="${starPath(6.2, 7.8, 4.0, 1.7, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` +
+      `  <path d="${starPath(17.8, 7.8, 4.0, 1.7, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` +
+      `  <path d="${starPath(12, 17.0, 4.6, 2.0, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.2" stroke-linejoin="round"/>\n` + tail;
+  }
+  /* 渐入佳境：拾级而上 + 星 */
+  if (id === 'stars30') {
+    return head +
+      `  <path d="M3.4 20.8 h5 v-4.4 h4.8 v-4.4 h4.6" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>\n` +
+      `  <path d="${starPath(18.2, 7.0, 4.4, 1.9, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` + tail;
+  }
+  /* 玲珑满堂：满月 + 两点星 */
+  if (id === 'stars60') {
+    return head +
+      `  <circle cx="12" cy="12.4" r="7.4" fill="#FFF3C4" stroke="#8A5F18" stroke-width="1.5"/>\n` +
+      `  <circle cx="12" cy="12.4" r="4.9" fill="none" stroke="${GOLD}" stroke-width="0.9" opacity="0.65"/>\n` +
+      `  <path d="${starPath(4.4, 4.4, 2.5, 1.0, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="0.8"/>\n` +
+      `  <path d="${starPath(19.8, 5.2, 2.1, 0.9, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="0.8"/>\n` + tail;
+  }
+  /* 三星照胆：北斗七星——七颗星靠连线成勺，线要够重才看得出是「星座」而不是一堆点 */
+  if (id === 'stars90') {
+    const d = [[4.8, 8.6], [8.2, 6.0], [11.6, 7.2], [14.2, 10.0], [14.8, 14.2], [19.0, 17.2], [13.4, 18.8]];
+    let dots = '';
+    for (let i = 0; i < d.length; i++) {
+      dots += `  <circle cx="${d[i][0]}" cy="${d[i][1]}" r="${i === 6 ? 2.5 : 1.7}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1"/>\n`;
+    }
+    return head +
+      `  <path d="M${d.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L')}" fill="none" stroke="${INK}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>\n` +
+      dots + tail;
+  }
+  /* 连锁狂人：同心涟漪 */
+  if (id === 'cascade8') {
+    return head +
+      `  <circle cx="12" cy="12" r="9.6" fill="none" stroke="${CINNABAR}" stroke-width="1.4" opacity="0.42"/>\n` +
+      `  <circle cx="12" cy="12" r="6.4" fill="none" stroke="${CINNABAR}" stroke-width="1.8" opacity="0.8"/>\n` +
+      `  <circle cx="12" cy="12" r="3.0" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1"/>\n` + tail;
+  }
+  /* 风起云涌：卷云 + 朱砂核（引爆特殊块） */
+  if (id === 'specials100') {
+    return head +
+      `  <path d="M12 12 a1.8 1.8 0 0 1 1.8 1.8 a3.8 3.8 0 0 1 -3.8 3.8 a6.0 6.0 0 0 1 -6.0 -6.0 a8.4 8.4 0 0 1 8.4 -8.4"
+     fill="none" stroke="${INK}" stroke-width="2.1" stroke-linecap="round"/>\n` +
+      `  <circle cx="12" cy="12" r="2.2" fill="${CINNABAR}"/>\n` + tail;
+  }
+  /* 破障高手：石锁被敲掉一角 + 碎屑飞散
+   * 沿用障碍「石环 + 四角铆钉」的视觉语言，右下角换成锯齿缺口——
+   * 玩家一眼认出是「破掉的那种东西」，而不是一块普通石头。 */
+  if (id === 'obst200') {
+    return head +
+      `  <path d="M4.6 4.4 h14.8 v7.4 l-3.2 3.0 -4.0 -1.4 -2.4 3.4 -5.2 -2.6 z"
+     fill="${STONE}" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>\n` +
+      `  <path d="M7.2 5.6 v12.0" fill="none" stroke="#FFFFFF" stroke-width="1.0" opacity="0.5"/>\n` +
+      `  <circle cx="8.2" cy="8.2" r="1.35" fill="#E2DCD0" stroke="${INK}" stroke-width="0.85"/>\n` +
+      `  <circle cx="15.8" cy="8.2" r="1.35" fill="#E2DCD0" stroke="${INK}" stroke-width="0.85"/>\n` +
+      `  <g fill="none" stroke="${CINNABAR}" stroke-width="1.9" stroke-linecap="round">\n` +
+      `    <path d="M19.6 3.4 l2.2 -1.6"/>\n` +
+      `    <path d="M21.0 8.0 l2.4 0.2"/>\n` +
+      `    <path d="M18.4 12.2 l2.0 2.0"/>\n` +
+      `  </g>\n` + tail;
+  }
+  /* 日行一善：日历 + 朱砂点 */
+  if (id === 'daily7') {
+    return head +
+      `  <rect x="3.4" y="5.2" width="17.2" height="15.4" rx="2.2" fill="#FBF6EA" stroke="${INK}" stroke-width="1.8"/>\n` +
+      `  <path d="M3.4 10.0 h17.2" fill="none" stroke="${INK}" stroke-width="1.6"/>\n` +
+      `  <path d="M8.2 3.2 v3.6" fill="none" stroke="${GOLD}" stroke-width="2.1" stroke-linecap="round"/>\n` +
+      `  <path d="M15.8 3.2 v3.6" fill="none" stroke="${GOLD}" stroke-width="2.1" stroke-linecap="round"/>\n` +
+      `  <circle cx="12" cy="15.6" r="2.7" fill="${CINNABAR}"/>\n` + tail;
+  }
+  /* 坚持不懈：七日珠串（第七颗描金） */
+  if (id === 'streak7') {
+    let beads = '';
+    for (let i = 0; i < 7; i++) {
+      const y = 3.6 + i * 2.85;
+      const last = i === 6;
+      beads += `  <circle cx="12" cy="${y.toFixed(2)}" r="${last ? 2.4 : 2.0}" fill="${last ? GOLD_HI : '#FBF6EA'}" stroke="${last ? '#8A5F18' : INK}" stroke-width="${last ? 1.2 : 1.5}"/>\n`;
+    }
+    return head +
+      `  <path d="M12 1.2 v21.6" fill="none" stroke="${INK}" stroke-width="1.1" opacity="0.32"/>\n` +
+      beads + tail;
+  }
+  /* 无尽旅人：远山 + 山径 + 日 */
+  if (id === 'endless10') {
+    return head +
+      `  <path d="M3.0 15.6 l4.6 -6.4 3.2 4.2 2.6 -3.4 4.8 5.6" fill="none" stroke="${INK}" stroke-width="2.0" stroke-linejoin="round" stroke-linecap="round"/>\n` +
+      `  <path d="M2.8 21.0 c3.6 0 4.6 -1.8 7.4 -1.8 c3.0 0 3.6 1.8 6.8 1.8 c1.5 0 2.6 -0.5 3.6 -1.2"
+     fill="none" stroke="${CINNABAR}" stroke-width="2.0" stroke-linecap="round"/>\n` +
+      `  <circle cx="17.8" cy="5.4" r="2.7" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1"/>\n` + tail;
+  }
+  /* 疾风快手：沙漏 */
+  return head +
+    `  <path d="M6.2 2.8 h11.6 v3.4 c0 2.6 -3.4 3.4 -3.4 5.8 c0 2.4 3.4 3.2 3.4 5.8 v3.4 h-11.6 v-3.4 c0 -2.6 3.4 -3.4 3.4 -5.8 c0 -2.4 -3.4 -3.2 -3.4 -5.8 z"
+     fill="none" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>\n` +
+    `  <path d="M8.6 5.2 h6.8 c0 1.9 -2.5 2.5 -2.5 4.4 c0 1.9 2.5 2.5 2.5 4.4 h-6.8 c0 -1.9 2.5 -2.5 2.5 -4.4 c0 -1.9 -2.5 -2.5 -2.5 -4.4 z"
+     fill="${GOLD_HI}" opacity="0.6"/>\n` +
+    `  <path d="M4.4 21.2 h15.2" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>\n` + tail;
+}
+
 function iconBack() {
   return HEAD + `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
   <path d="M14.4 4.2 L6.2 12 L14.4 19.8" fill="none" stroke="${INK}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -647,7 +775,20 @@ const files = {
   'scroll_l4.svg': scrollLayer(4),
   'scroll_l5.svg': scrollLayer(5),
   'ui_medal.svg': iconMedal(),
-  'board_frame.svg': boardFrame()
+  'board_frame.svg': boardFrame(),
+  /* 成就徽记：与 Achievements.LIST 的 id 一一对应 */
+  'ach_firstStar.svg': iconAch('firstStar'),
+  'ach_stars10.svg': iconAch('stars10'),
+  'ach_stars30.svg': iconAch('stars30'),
+  'ach_stars60.svg': iconAch('stars60'),
+  'ach_stars90.svg': iconAch('stars90'),
+  'ach_cascade8.svg': iconAch('cascade8'),
+  'ach_specials100.svg': iconAch('specials100'),
+  'ach_obst200.svg': iconAch('obst200'),
+  'ach_daily7.svg': iconAch('daily7'),
+  'ach_streak7.svg': iconAch('streak7'),
+  'ach_endless10.svg': iconAch('endless10'),
+  'ach_timed8k.svg': iconAch('timed8k')
 };
 
 let bytes = 0;

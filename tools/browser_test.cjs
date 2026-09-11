@@ -23,8 +23,13 @@ const { spawn } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const args = process.argv.slice(2);
 const getArg = function (name, def) {
-  const m = args.find(function (a) { return a.indexOf('--' + name + '=') === 0; });
-  return m ? m.split('=')[1] : def;
+  /* 用 slice 而不是 split('=') —— 参数值里常有 '='（比如 --eval='...=3...'），
+   * 按 '=' 切会把值截断成半句，报出莫名其妙的 SyntaxError。 */
+  const pre = '--' + name + '=';
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].indexOf(pre) === 0) return args[i].slice(pre.length);
+  }
+  return def;
 };
 const W = parseInt(getArg('w', '1280'), 10);
 const H = parseInt(getArg('h', '800'), 10);
@@ -395,6 +400,23 @@ const STATE_DUMP = `(function () {
            aim: LL.Game.aim && LL.Game.aim.id };
 })()`;
 
+/* 图片体检：把页面上所有 <img>（包含隐藏界面里的）过一遍。
+ * display:none 的图也会加载，所以一次扫描就能覆盖全部界面，
+ * 不用挨个 showScreen。加载失败 = complete 但 naturalWidth 为 0。 */
+const IMAGE_AUDIT = `(function () {
+  var bad = [], all = document.querySelectorAll('img');
+  for (var i = 0; i < all.length; i++) {
+    var im = all[i];
+    if (!im.complete || im.naturalWidth === 0) {
+      var box = im.getBoundingClientRect();
+      bad.push({ src: im.getAttribute('src') || '(空)', cls: im.className || '',
+                 w: Math.round(box.width), h: Math.round(box.height), visible: box.width > 0 });
+    }
+  }
+  var refs = { assets: LL.Assets.IMAGE_LIST.length, dom: all.length };
+  return { bad: bad, refs: refs };
+})()`;
+
 /* ---------- 主流程 ---------- */
 (async function main() {
   const chrome = findChrome();
@@ -461,6 +483,20 @@ const STATE_DUMP = `(function () {
       8000, '点击后回到稳定状态').catch(function () { /* 状态机可能停在中间，不致命 */ });
     report('点击 ' + c.clicks + ' 个按钮无 JS 异常', c.log.length === 0, c.log.slice(0, 3).join(' | '));
 
+    /* 1.5 图片体检（含隐藏界面里的图） */
+    console.log('\n[1.5] 图片体检');
+    await cdp.evaluate("LL.UI.showScreen('map'); LL.UI.showTab('achievements'); true");
+    await new Promise(function (r) { setTimeout(r, 400); });
+    const imgs = await cdp.evaluate(IMAGE_AUDIT);
+    if (imgs.bad.length) {
+      const uniq = {};
+      imgs.bad.forEach(function (b) { uniq[b.src] = b; });
+      console.log('  失败 ' + imgs.bad.length + ' 个 <img>：');
+      Object.keys(uniq).forEach(function (s) { console.log('    ✗ ' + s + (uniq[s].cls ? '  [' + uniq[s].cls + ']' : '')); });
+    }
+    report('页面所有 <img> 都能加载（DOM ' + imgs.refs.dom + ' 个 / 清单 ' + imgs.refs.assets + ' 张）',
+      imgs.bad.length === 0, imgs.bad.length ? imgs.bad.length + ' 张加载失败' : '');
+
     /* 2. 技能演练（分步执行，每步之间等动画收束） */
     console.log('\n[2] 技能与灵力演练（第 19 关 · 石锁盘面）');
     await cdp.send('Page.navigate', { url: base + '/index.html?level=19' });
@@ -523,13 +559,29 @@ const STATE_DUMP = `(function () {
     report('棋盘与技能栏都收在画布内', lay.withinCanvas,
       '画布 top ' + lay.canvas.top + ' h ' + lay.canvas.h + ' · 棋盘上方留白 ' + lay.gapAboveBoard + 'px');
 
-    /* 6. 截图 */
+    /* 6. 截图（可选先切到指定界面 / 先注入一段调试脚本，方便逐个界面人工复看） */
     if (SHOT) {
+      const screen = getArg('shot-screen', '');
+      const seedJs = getArg('eval', '');
+      if (seedJs) {
+        await cdp.evaluate(seedJs);
+        await new Promise(function (r) { setTimeout(r, 300); });
+      }
+      if (screen) {
+        if (screen === 'achievements') {
+          await cdp.evaluate("LL.UI.showScreen('map'); LL.UI.showTab('achievements'); true");
+        } else if (screen === 'map') {
+          await cdp.evaluate("LL.UI.toMap(); true");
+        } else {
+          await cdp.evaluate('LL.UI.showScreen(' + JSON.stringify(screen) + '); true');
+        }
+        await new Promise(function (r) { setTimeout(r, 500); });
+      }
       const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
       const out = path.isAbsolute(SHOT) ? SHOT : path.join(ROOT, SHOT);
       fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, Buffer.from(shot.data, 'base64'));
-      console.log('\n  截图 → ' + out);
+      console.log('\n  截图' + (screen ? '（' + screen + '）' : '') + ' → ' + out);
     }
 
     /* 7. 运行期报错 */

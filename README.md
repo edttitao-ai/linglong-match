@@ -25,7 +25,9 @@
 |---|---|
 | ![局内技能](screenshots/skills-wide.png) | ![窄屏技能栏](screenshots/skills-narrow.png) |
 
-![设置面板](screenshots/settings.png)
+| 成就与画卷 | 设置面板 |
+|---|---|
+| ![成就](screenshots/achievements.png) | ![设置面板](screenshots/settings.png) |
 
 ## 🎯 这是个什么游戏
 
@@ -196,7 +198,7 @@ linglong-match/
 │   ├── assets.js audio.js i18n.js     # 素材加载 / 音效 / 文案
 │   └── main.js                        # 引导与主循环
 ├── lang/                   # 中文 / English 文案
-├── assets/img/             # 42 个 SVG 精灵（块 / 特殊块 / 障碍 / 技能 / 图标 / 装饰 / 背景）
+├── assets/img/             # 54 个 SVG 精灵（块 / 特殊块 / 障碍 / 技能 / 成就徽记 / 图标 / 装饰 / 背景）
 ├── assets/sfx/             # 22 个 WAV 音效
 ├── tools/                  # 自检、平衡验证、浏览器冒烟、音效体检、素材生成脚本
 └── screenshots/
@@ -212,8 +214,10 @@ node tools/balance.cjs --daily --days=21 # 每日挑战抽查：连看三周的�
 node tools/balance.cjs --skills --weaken=35 # 局内技能回归：同一个种子跑两遍（关技能 / 开技能），
                                         # --weaken=35 模拟「35% 走法乱下」的玩家，回答「技能能不能救回卡关的人」
 node tools/balance.cjs --skills=max     # 技能收益上界：灵力全砸移山，测难度天花板会不会塌
-node tools/browser_test.cjs             # 无头浏览器冒烟：点遍所有按钮 + 脚本化演练四个技能 + 布局检查
+node tools/browser_test.cjs             # 无头浏览器冒烟：点遍所有按钮 + 图片体检 + 脚本化演练四个技能 + 布局检查
 node tools/browser_test.cjs --w=430 --h=800 --shot=out.png
+node tools/browser_test.cjs --shot=achievements.png --shot-screen=achievements
+                                        # --shot-screen 先切到指定界面再截图；--eval='<js>' 可先注入一段调试脚本
 node tools/check_sfx.cjs                # 音效体检：峰值电平是否符合设计、连锁音高是否单调递增
 python tools/serve.py                   # 本地开发服务器（禁缓存，改完刷新即生效）
 node tools/gen_tiles.mjs                # 重新生成全部 SVG 精灵
@@ -225,7 +229,8 @@ python tools/gen_sfx.py                 # 重新合成全部 WAV 音效
   组合效果范围（十字、5×5、三行三列、同色全消、全屏）· 障碍分层与藤蔓重力分段 ·
   死局洗牌必定产出可玩棋盘 · 30 关数据合法性（含「收集目标颜色必须在该关色池内」这类容易写错的检查）·
   局内技能（四个技能的计划与落点、灵力收支与溢出、背水一战倍率、绝处逢生门槛与次数、
-  技能资产与中英文案齐全、**技能回合带出连锁不崩**）。
+  技能资产与中英文案齐全、**技能回合带出连锁不崩**）·
+  **素材完整性**（源码里写死的键 / 配表声明的图标 / 磁盘文件，三方对账，并反向查「生成了却没人用的孤儿图」）。
 - **平衡验证**：用一个会优先照顾目标、破障与特殊块的贪心玩家跑满每关若干局，
   输出胜率、平均剩余步数与得分分位数，并给出二星 / 三星阈值建议。当前 30 关的胜率曲线为：
   第一章 ~100%（教学）→ 第二章 71–100% → 第三章 49–99% → 第四章 33–77%。

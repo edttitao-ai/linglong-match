@@ -729,6 +729,87 @@ section('9. 局内技能与灵力');
   eq(missFile.length, 0, '技能图标文件已生成' + (missFile.length ? '：' + missFile.join(' | ') : ''));
 }
 
+/* ---------- 10. 素材完整性 ----------
+ * 起因：成就列表一直用 LL.Assets.path('ui_medal')，但 ui_medal 从没登记进 IMAGES，
+ * path() 于是退回原名、拼出 assets/img/ui_medal（没有 .svg）→ 12 行成就全是 404。
+ * 这类问题语法检查、模块契约都抓不到，只有把「代码里的键 ↔ 清单 ↔ 磁盘文件」三方对起来才看得见。 */
+section('10. 素材完整性');
+{
+  const fsMod = require('fs');
+  const imgDir = path.join(__dirname, '..', 'assets', 'img');
+  const sfxDir = path.join(__dirname, '..', 'assets', 'sfx');
+  const jsDir = path.join(__dirname, '..', 'js');
+
+  const imgList = LL.Assets.IMAGE_LIST || [];
+  const sfxList = LL.Assets.SFX_LIST || [];
+  const has = function (arr, k) { return arr.indexOf(k) >= 0; };
+
+  /* 10a. 代码里写死的 Assets.path('xxx') 键都要在清单里。
+   * 只收「纯字面量」调用（右引号后紧跟右括号）——像 path('tile_' + info.id) 这种
+   * 拼出来的键在 10f 里按前缀单独校验。 */
+  const literalKeys = [];
+  const keyRe = /LL\.Assets\.path\(\s*'([^']+)'\s*\)/g;
+  fsMod.readdirSync(jsDir).forEach(function (file) {
+    if (file === 'main.js') return;
+    const src = fsMod.readFileSync(path.join(jsDir, file), 'utf8');
+    let m;
+    while ((m = keyRe.exec(src))) literalKeys.push({ key: m[1], file: file });
+  });
+  const badLiteral = literalKeys.filter(function (x) { return !has(imgList, x.key); });
+  eq(badLiteral.length, 0, '源码里写死的素材键都已登记' +
+    (badLiteral.length ? '：' + badLiteral.map(function (x) { return x.key + '(' + x.file + ')'; }).slice(0, 6).join(' | ') : '') +
+    '（共检查 ' + literalKeys.length + ' 处）');
+
+  /* 10f. 拼接出来的键按前缀family校验：路径拼 'tile_' + id 之类必须每种都存在 */
+  const expectedDyn = [];
+  CFG.TILE_INFO.forEach(function (t) { expectedDyn.push('tile_' + t.id); });
+  expectedDyn.push('ui_star', 'ui_star_off', 'ob_stone', 'ui_lock');
+  const badDyn = expectedDyn.filter(function (k) { return !has(imgList, k); });
+  eq(badDyn.length, 0, '拼接用的素材键（tile_* 等）都已登记' +
+    (badDyn.length ? '：' + badDyn.slice(0, 6).join(' | ') : '') + '（共 ' + expectedDyn.length + ' 个）');
+
+  /* 10b. 配表里声明的图标键也要在清单里（技能 / 开局道具 / 成就） */
+  const tableIcons = [];
+  SK.order().forEach(function (id) { tableIcons.push({ key: SK.def(id).icon, from: 'SKILLS.' + id }); });
+  CFG.BOOSTERS.order.forEach(function (id) { tableIcons.push({ key: CFG.BOOSTERS[id].icon, from: 'BOOSTERS.' + id }); });
+  LL.Achievements.LIST.forEach(function (a) { tableIcons.push({ key: a.icon, from: 'ACH.' + a.id }); });
+  const badTable = tableIcons.filter(function (x) { return !x.key || !has(imgList, x.key); });
+  eq(badTable.length, 0, '配表声明的图标都已登记' +
+    (badTable.length ? '：' + badTable.map(function (x) { return x.from + '→' + x.key; }).slice(0, 6).join(' | ') : '') +
+    '（共检查 ' + tableIcons.length + ' 个）');
+
+  /* 10c. 清单里每张图都真的在磁盘上（生成脚本改了名/漏跑都能查到） */
+  const missFile = imgList.filter(function (k) { return !fsMod.existsSync(path.join(imgDir, LL.Assets.IMAGES[k])); });
+  eq(missFile.length, 0, '清单里的图片文件都存在' +
+    (missFile.length ? '：' + missFile.slice(0, 6).join(' | ') : '') + '（共 ' + imgList.length + ' 张）');
+
+  /* 10d. 音效清单同理 */
+  const missSfx = sfxList.filter(function (k) { return !fsMod.existsSync(path.join(sfxDir, LL.Assets.SFX[k])); });
+  eq(missSfx.length, 0, '清单里的音效文件都存在' +
+    (missSfx.length ? '：' + missSfx.slice(0, 6).join(' | ') : '') + '（共 ' + sfxList.length + ' 个）');
+
+  /* 10e. 反向检查：磁盘上生成的图不能有「没人登记也没人引用」的孤儿。
+   * 在 index.html / css 里写死路径的（背景、卷轴层、云纹）列入白名单。 */
+  const hardcoded = {};
+  const idxSrc = fsMod.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const cssSrc = fsMod.readdirSync(path.join(__dirname, '..', 'css')).map(function (f) {
+    return fsMod.readFileSync(path.join(__dirname, '..', 'css', f), 'utf8');
+  }).join('\n');
+  const hardRe = /assets\/img\/([A-Za-z0-9_]+)\.svg/g;
+  let hm;
+  while ((hm = hardRe.exec(idxSrc))) hardcoded[hm[1]] = true;
+  while ((hm = hardRe.exec(cssSrc))) hardcoded[hm[1]] = true;
+  const registeredFiles = {};
+  imgList.forEach(function (k) { registeredFiles[String(LL.Assets.IMAGES[k]).replace('.svg', '')] = true; });
+  const orphans = fsMod.readdirSync(imgDir).filter(function (f) {
+    if (f.slice(-4) !== '.svg') return false;
+    const base = f.replace('.svg', '');
+    return !registeredFiles[base] && !hardcoded[base];
+  });
+  eq(orphans.length, 0, '生成的图没有孤儿（要么登记进清单、要么在页面里写死路径）' +
+    (orphans.length ? '：' + orphans.slice(0, 8).join(' | ') : ''));
+}
+
 /* ---------- 汇总 ---------- */
 console.log('\n' + '─'.repeat(56));
 console.log('通过 ' + passed + ' 项，失败 ' + failed + ' 项');

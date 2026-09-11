@@ -367,7 +367,7 @@
         const on = !!P.achievementOf(a.id);
         const row = U.el('div', 'ach-row' + (on ? ' on' : ''));
         row.innerHTML =
-          '<img class="ach-icon" src="' + LL.Assets.path('ui_medal') + '" alt="">' +
+          '<img class="ach-icon" src="' + LL.Assets.path(a.icon || 'ui_medal') + '" alt="">' +
           '<div class="ach-body"><div class="ach-name">' + I18N.t('ach_' + a.id) + '</div>' +
           '<div class="ach-desc">' + I18N.t('ach_' + a.id + '_d') + '</div></div>' +
           '<div class="ach-coin">' + (on ? I18N.t('achGot') : '+' + a.coins) + '</div>';
