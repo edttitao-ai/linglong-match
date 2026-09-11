@@ -60,6 +60,7 @@
         quests: $('#quests'),
         questRows: $('#questRows'),
         questBonus: $('#questBonus'),
+        questNote: $('#questNote'),
         btnQuestAll: $('#btnQuestAll'),
         questDot: $('#questDot'),
         boostSlots: $('#boostSlots'),
@@ -438,6 +439,7 @@
 
     showQuests() {
       this.buildQuests();
+      U.show(this.els.questNote, false);   /* 上一次打开留下的回执不要带进来 */
       U.show(this.els.quests, true);
     },
 
@@ -490,9 +492,25 @@
       this.els.questBonus.textContent = I18N.t('questBonus') + ' +' + LL.CFG.QUESTS.allDoneBonus +
         (st.bonusClaimed ? '　·　' + I18N.t('questClaimed') : '') +
         (st.rerolls > 0 ? '　·　' + I18N.t('questReroll') + ' ×' + st.rerolls : '');
-      const anyClaimable = st.claimable > 0 || st.bonusClaimable;
-      U.show(this.els.btnQuestAll, anyClaimable);
-      this.els.btnQuestAll.textContent = I18N.t('questAll');
+
+      /* 按钮的文案必须说清「这一次领的是什么」。
+       * 三条都单独领完之后，它剩下的唯一用途是领全清奖励，此时还写着「一键领取」，
+       * 玩家会以为有任务漏领了（这就是被报出来的现象）。 */
+      const anyQuests = st.claimable > 0;
+      U.show(this.els.btnQuestAll, anyQuests || st.bonusClaimable);
+      this.els.btnQuestAll.textContent = anyQuests
+        ? I18N.t('questAll')
+        : I18N.t('questBonusClaim', { n: LL.CFG.QUESTS.allDoneBonus });
+    },
+
+    /* 领取后的回执：领了多少要说出来，不然点一下只是数字默默涨 */
+    questNote(text) {
+      const el = this.els.questNote;
+      if (!el) return;
+      el.textContent = text;
+      U.show(el, true);
+      clearTimeout(this._questNoteTimer);
+      this._questNoteTimer = setTimeout(function () { U.show(el, false); }, 2600);
     },
 
     claimQuest(i) {
@@ -500,6 +518,7 @@
       if (got) {
         LL.Audio.play('star', { rate: 1.06, vol: 0.85 });
         this.updateCoins();
+        this.questNote(I18N.t('questGot', { n: got.coins }));
       }
       this.buildQuests();
       this.updateBadges();
@@ -517,6 +536,7 @@
       if (total > 0) {
         LL.Audio.play('star', { rate: 1.06, vol: 0.9 });
         this.updateCoins();
+        this.questNote(I18N.t('questGot', { n: total }));
       }
       this.buildQuests();
       this.updateBadges();

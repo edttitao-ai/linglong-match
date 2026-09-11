@@ -898,6 +898,64 @@ section('11. 弹层叠放次序');
   ok(ladder.skillIntro < ladder.confirm, '技能说明低于确认框');
 }
 
+/* ---------- 12. 文案完整性 ----------
+ * 文案键是手写字符串，最容易「改了一处、忘了另一处」：
+ * 动态拼出来的（'skill_' + id）和 HTML 里的 data-i18n 属性都不会报错，
+ * 只会静静地显示成键名本身。这里把三类来源都对着字典核一遍。 */
+section('12. 文案完整性');
+{
+  const fsMod = require('fs');
+  const jsDir = path.join(__dirname, '..', 'js');
+  const zh = (LL.LANG && LL.LANG.zh) || {};
+  const en = (LL.LANG && LL.LANG.en) || {};
+  const miss = [];
+  const need = function (k, from) {
+    if (!zh[k]) miss.push('zh ' + k + (from ? '(' + from + ')' : ''));
+    if (!en[k]) miss.push('en ' + k + (from ? '(' + from + ')' : ''));
+  };
+
+  /* 12a. 源码里写死的 I18N.t('key') */
+  const keys = [];
+  const re = /I18N\.t\(\s*'([A-Za-z0-9_]+)'\s*[,)]/g;
+  fsMod.readdirSync(jsDir).forEach(function (file) {
+    const src = fsMod.readFileSync(path.join(jsDir, file), 'utf8');
+    let m;
+    while ((m = re.exec(src))) keys.push(m[1]);
+  });
+  Array.from(new Set(keys)).forEach(function (k) { need(k); });
+
+  /* 12b. 拼接出来的键：技能 / 成就 / 开局道具 / 每日任务种类 */
+  (LL.Skills ? LL.Skills.order() : []).forEach(function (id) {
+    need('skill_' + id); need('skill_' + id + '_d'); need('skill_' + id + '_use');
+  });
+  (LL.Achievements ? LL.Achievements.LIST : []).forEach(function (a) {
+    need('ach_' + a.id); need('ach_' + a.id + '_d');
+  });
+  CFG.BOOSTERS.order.forEach(function (id) { need('boost_' + id); });
+  (LL.Quests ? LL.Quests.POOL : []).forEach(function (q) { need('quest_' + q.kind); });
+
+  /* 12c. index.html 的 data-i18n / data-i18n-html / data-i18n-title */
+  const htmlSrc = fsMod.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const htmlRe = /data-i18n(?:-html|-title)?="([A-Za-z0-9_]+)"/g;
+  let hm;
+  const htmlKeys = [];
+  while ((hm = htmlRe.exec(htmlSrc))) htmlKeys.push(hm[1]);
+  Array.from(new Set(htmlKeys)).forEach(function (k) { need(k, 'html'); });
+
+  const uniq = Array.from(new Set(miss));
+  eq(uniq.length, 0, '引用到的文案键都有中英文案' +
+    (uniq.length ? '：' + uniq.slice(0, 10).join(' | ') : '') +
+    '（源码 ' + Array.from(new Set(keys)).length + ' 键 + 拼接键 + HTML ' + Array.from(new Set(htmlKeys)).length + ' 键）');
+
+  /* 12d. 词典键数对齐：中文有而英文没有（或反过来）会静默回退到中文 */
+  const onlyZh = Object.keys(zh).filter(function (k) { return en[k] == null; }); 
+  const onlyEn = Object.keys(en).filter(function (k) { return zh[k] == null; });
+  eq(onlyZh.length + onlyEn.length, 0, '中英词典键数一致（单向缺失会静默回退到中文）' +
+    ((onlyZh.length || onlyEn.length)
+      ? '：仅中文 ' + onlyZh.slice(0, 5).join(',') + ' ｜ 仅英文 ' + onlyEn.slice(0, 5).join(',')
+      : '（各 ' + Object.keys(zh).length + ' 键）'));
+}
+
 /* ---------- 汇总 ---------- */
 console.log('\n' + '─'.repeat(56));
 console.log('通过 ' + passed + ' 项，失败 ' + failed + ' 项');

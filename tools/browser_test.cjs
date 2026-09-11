@@ -713,6 +713,47 @@ const IMAGE_AUDIT = `(function () {
     })()`);
     report('暂停面板可重看技能说明，且说明面板在最上层', help.ok, help.why);
 
+    /* 2.7 每日任务：三条各自领完之后，「一键领取」该显示什么
+     * 玩家报的现象：三条都单独领了，按钮还在，点一下才消失。 */
+    console.log('\n[2.7] 每日任务领取');
+    const quest = await cdp.evaluate(`(function () {
+      var t = { steps: [], fail: [] };
+      function ck(c, m) { t.steps.push((c ? 'ok  ' : 'FAIL ') + m); if (!c) t.fail.push(m); }
+      var P = LL.Progress;
+      var st = P.questState();
+      /* 把三条任务都做满 */
+      for (var i = 0; i < st.list.length; i++) P.data.quests.progress[i] = st.list[i].target;
+      P.save();
+      LL.UI.showQuests();
+      var btn = document.getElementById('btnQuestAll');
+      ck(!btn.classList.contains('hidden'), '三条都完成时按钮出现');
+      ck(btn.textContent.indexOf('一键') >= 0, '此时按钮是「一键领取」（实际：' + btn.textContent + '）');
+
+      /* 逐条单独领取（玩家的操作） */
+      for (var k = 0; k < st.list.length; k++) {
+        var rows = document.querySelectorAll('#questRows .q-claim');
+        if (rows.length) rows[0].click();
+      }
+      var st2 = P.questState();
+      ck(st2.claimable === 0, '三条都已领取');
+      ck(st2.bonusClaimable === true, '全清奖励此时才可领（这是设计）');
+      var btn2 = document.getElementById('btnQuestAll');
+      ck(!btn2.classList.contains('hidden'), '全清奖励还没领，按钮应该还在');
+      ck(btn2.textContent.indexOf('全清') >= 0,
+        '此时按钮要说清「领的是全清奖励」而不是笼统的「一键领取」（实际：' + btn2.textContent + '）');
+
+      /* 领完之后必须消失 */
+      btn2.click();
+      var st3 = P.questState();
+      ck(st3.bonusClaimed, '全清奖励已领取');
+      ck(document.getElementById('btnQuestAll').classList.contains('hidden'), '没有可领的东西后按钮消失');
+      t.steps.forEach(function (s) { if (s.indexOf('ok  ') !== 0) console.log('  ✗ ' + s.slice(5)); });
+      return { steps: t.steps, fail: t.fail };
+    })()`);
+    report('每日任务：领取状态与按钮一致 ' + (quest.steps.length - quest.fail.length) + '/' + quest.steps.length + ' 项',
+      quest.fail.length === 0, quest.fail.slice(0, 3).join(' | '));
+    await cdp.evaluate('LL.UI.hideQuests(); true');
+
     /* 2. 技能演练（分步执行，每步之间等动画收束） */
     console.log('\n[2] 技能与灵力演练（第 19 关 · 石锁盘面）');
     await cdp.send('Page.navigate', { url: base + '/index.html?level=19' });
