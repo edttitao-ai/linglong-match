@@ -555,8 +555,15 @@ section('9. 局内技能与灵力');
   ok(QI.START >= Math.min.apply(null, order.map(function (id) { return SK.def(id).cost; })),
     '开局赠送的灵力至少够放一次最便宜的技能（保证一进场就能体验）');
   ok(QI.MAX >= CFG.SKILLS.cross.cost, '灵力上限至少够放一次最贵的技能');
-  ok(QI.MAX < CFG.SKILLS.cross.cost * 4, '灵力上限存不住四次大招（上限必须有意义）');
-  ok(LS.cost >= CFG.SKILLS.cross.cost, '绝处逢生的代价不低于一次移山');
+  ok(QI.MAX < CFG.SKILLS.cross.cost * 2, '灵力上限存不住两次最贵的技能（上限必须有意义）');
+  /* 绝处逢生才是反流失的保底：技能是稀缺资源，它必须「存得出来」 */
+  ok(LS.cost <= QI.MAX, '满槽时一定付得起绝处逢生（' + LS.cost + ' ≤ ' + QI.MAX + '）');
+  ok(LS.cost >= CFG.SKILLS.swap.cost, '绝处逢生不是白送（≥ 最便宜的技能 ' + CFG.SKILLS.swap.cost + '）');
+  /* 技能总预算：一关的收入除以最便宜的价格，就是理论上限的释放次数。
+   * 太多就变成「无脑过」（实测过 4~5 次会把握胜率推到 99.8%），太少则救不了急。 */
+  const cheapest = Math.min.apply(null, order.map(function (id) { return SK.def(id).cost; }));
+  ok(cheapest >= 60, '最便宜的技能也要花掉可观的一笔（' + cheapest + '），避免技能被当水龙头');
+  ok(QI.START <= QI.MAX * 0.5, '开局赠送不超过半槽（' + QI.START + ' ≤ ' + Math.round(QI.MAX * 0.5) + '）');
 
   /* 9b. 如意锤：只打一格，但能一锤破开石锁（2 点破障），且第二击不重复计格 */
   const hb = B.create({ colors: 5, rnd: U.rng(41) });

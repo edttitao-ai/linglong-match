@@ -216,7 +216,7 @@ const DRILL_STEPS = [
     label: '如意锤 · 瞄准',
     expr: `(function () {
       var G = LL.Game;
-      G.qi = 120;
+      G.qi = LL.CFG.QI.MAX;      /* 补到上限：夹具不写死价格，改价时才不会假红 */
       __ck(G.useSkill('hammer') && !!G.aim && G.aim.id === 'hammer', '如意锤进入瞄准态');
       __ck(!!document.querySelector('.skill-slot.armed'), '技能栏高亮成瞄准态');
       __t.qiBefore = G.qi;
@@ -244,13 +244,14 @@ const DRILL_STEPS = [
     label: '瞄准态取消',
     expr: `(function () {
       var G = LL.Game;
-      G.qi = 120;
+      G.qi = LL.CFG.QI.MAX;      /* 补到上限：夹具不写死价格，改价时才不会假红 */
+      var before = G.qi;
       G.useSkill('hammer');
       __ck(!!G.aim, '再次进入瞄准态');
       __ck(!!document.querySelector('.skill-slot.armed'), '技能栏同步高亮');
       G.cancelAim();
       __ck(!G.aim, 'cancelAim 退出瞄准态');
-      __ck(G.qi === 120, '取消不退灵力');
+      __ck(G.qi === before, '取消不退灵力（' + before + '→' + G.qi + '）');
       __ck(!document.querySelector('.skill-slot.armed'), '技能栏取消高亮');
       return true;
     })()`
@@ -272,7 +273,7 @@ const DRILL_STEPS = [
     label: '移山 · 十字爆破',
     expr: `(function () {
       var G = LL.Game;
-      G.qi = 120;
+      G.qi = LL.CFG.QI.MAX;      /* 补到上限：夹具不写死价格，改价时才不会假红 */
       var before = G.qi;
       __ck(G.useSkill('cross') && G.aim.id === 'cross', '移山进入瞄准态');
       /* 先数一遍第 4 行与第 4 列上有多少格真的有块 */
@@ -295,7 +296,7 @@ const DRILL_STEPS = [
     label: '灵犀一点 · 选格选色',
     expr: `(function () {
       var G = LL.Game;
-      G.qi = 120;
+      G.qi = LL.CFG.QI.MAX;      /* 补到上限：夹具不写死价格，改价时才不会假红 */
       var before = G.qi;
       __ck(G.useSkill('color') && G.aim.id === 'color', '灵犀一点进入瞄准态');
       G.tapCell(__t.plain);
@@ -328,7 +329,7 @@ const DRILL_STEPS = [
     label: '换天 · 全盘重排',
     expr: `(function () {
       var G = LL.Game, cost = LL.CFG.SKILLS.swap.cost;
-      G.qi = 120;
+      G.qi = LL.CFG.QI.MAX;      /* 补到上限：夹具不写死价格，改价时才不会假红 */
       var before = G.qi;
       /* 把盘面记下来：换天的唯一效果就是「盘面变了」，
        * 所以必须断言它真的变了——早先正是这里漏了断言，
@@ -364,7 +365,7 @@ const DRILL_STEPS = [
     label: '绝处逢生 · 灵力换步数',
     expr: `(function () {
       var G = LL.Game, LS = LL.CFG.LAST_STAND;
-      G.qi = 120; G.movesLeft = 0; G.lastStandUsed = 0; G.state = 'playing';
+      G.qi = LL.CFG.QI.MAX; G.movesLeft = 0; G.lastStandUsed = 0; G.state = 'playing';
       G.finishTurnInner();
       __ck(!!G.pendingLastStand, '步数耗尽且灵力充足时提供绝处逢生');
       __ck(G.state === 'laststand', '进入绝处逢生态');
@@ -383,7 +384,7 @@ const DRILL_STEPS = [
     label: '绝处逢生 · 次数与门槛',
     expr: `(function () {
       var G = LL.Game;
-      G.qi = 120; G.movesLeft = 0;
+      G.qi = LL.CFG.QI.MAX; G.movesLeft = 0;
       G.finishTurnInner();
       if (G.pendingLastStand) G.useLastStand();
       G.movesLeft = 0;
@@ -739,7 +740,7 @@ const IMAGE_AUDIT = `(function () {
 
     /* 短按仍然正常放技能（先补满灵力：移山 60 点，开局只有 30） */
     await new Promise(function (r) { setTimeout(r, 2800); });   /* 等说明卡自动收起 */
-    await cdp.evaluate('LL.Game.qi = 120; LL.UI.buildSkillBar(); true');
+    await cdp.evaluate('LL.Game.qi = LL.CFG.QI.MAX; LL.UI.buildSkillBar(); true');
     await cdp.send('Input.dispatchTouchEvent', touchStart);
     await new Promise(function (r) { setTimeout(r, 90); });
     await cdp.send('Input.dispatchTouchEvent', touchEnd);

@@ -110,11 +110,16 @@
     },
 
     /* 局内技能「灵力」：**只能玩出来，不能买**——守住上面那条铁律。
-     * 一关（18 步、约 130 格）预期总收入 150 上下 ≈ 3~5 次技能：
-     * 够救急，又不足以让关卡设计失去意义（见 README「局内技能」）。 */
+     *
+     * 定价基准（实测来的，不是拍的）：
+     * 一关的灵力总收入约 230~350（每消除一块 +1，加上连锁/破障/引爆的加成），
+     * 所以想让「一关大概放 2~3 次技能」，技能价格就必须在 70~160 这一档。
+     * 早先价格是 25~60，等于一关能放 4~5 次大招——实测「无脑砸移山」把 70 关的
+     * 平均胜率从 70% 推到 99.8%，难度直接没了。改价之后同理回归。
+     * 上限 180 = 存得住一次最贵的技能 + 一点零头，存不住两次。 */
     QI: {
-      MAX: 120,             // 灵力上限：存得住一次大招，存不住四个
-      START: 30,            // 开局赠送：人人一进场就能放一次技能（首次体验不花钱）
+      MAX: 240,
+      START: 90,            // 开局赠送：一进场就能放一次（便宜的两个之一）
       PER_TILE: 1,          // 每消除一块
       PER_CASCADE: 6,       // 连锁每多一层（第 2 层起）
       PER_OBSTACLE: 6,      // 每破一个障碍
@@ -126,19 +131,24 @@
     },
 
     /* 四个局内技能：一律**不消耗步数**，代价只有灵力
+     * 价格按「这一下值多少」定：换天是解围不是输出所以最便宜，
+     * 移山一下清十几格还顺带破障，所以最贵。
+     * 移山定到 220 是因为它在清障关里一次能打掉整条路径上的障碍——按 160 定价时，
+     * 「无脑砸移山」仍然能把 13 个清障关推过「太简单」线。
      * aim：none 直接放 · cell 选一格 · color 选一格再选色
      * swap（换天）在盘面已无解时免费——不让你因为没灵力而卡死 */
     SKILLS: {
       order: ['hammer', 'swap', 'color', 'cross'],
-      hammer: { cost: 30, aim: 'cell',  icon: 'ui_skill_hammer', cause: 'skill_hammer' },
-      swap:   { cost: 25, aim: 'none',  icon: 'ui_skill_swap',   cause: 'skill_swap', freeWhenStuck: true },
-      color:  { cost: 45, aim: 'color', icon: 'ui_skill_color',  cause: 'skill_color' },
-      cross:  { cost: 60, aim: 'cell',  icon: 'ui_skill_cross',  cause: 'skill_cross' }
+      hammer: { cost: 100, aim: 'cell',  icon: 'ui_skill_hammer', cause: 'skill_hammer' },
+      swap:   { cost: 70,  aim: 'none',  icon: 'ui_skill_swap',   cause: 'skill_swap', freeWhenStuck: true },
+      color:  { cost: 130, aim: 'color', icon: 'ui_skill_color',  cause: 'skill_color' },
+      cross:  { cost: 220, aim: 'cell',  icon: 'ui_skill_cross',  cause: 'skill_cross' }
     },
 
     /* 绝处逢生：步数耗尽且目标未完成时，花灵力换步数——不走金币，不破铁律。
-     * max 防极端连锁下的循环；灵力不够时才轮到金币续步那条路。 */
-    LAST_STAND: { cost: 60, moves: 3, max: 2 },
+     * 它才是真正的反流失闸门（技能是稀缺的战术资源，这里才是保底），
+     * 所以定价要「存得出来」：满槽时一定拿得出。max 防极端连锁下的循环。 */
+    LAST_STAND: { cost: 120, moves: 3, max: 2 },
 
     /* 每日任务：3 条，易/中/难各一；三条合计应在 15~25 分钟内可清完 */
     QUESTS: {

@@ -182,7 +182,9 @@ function castSkill(rs, b, plan, level, st) {
   while ((ev = R.step(rs)) && guard++ < 500) {
     if (ev.kind === 'clear') {
       st.score += ev.score;
-      st.qi = SK.addQi(st.qi, SK.gain(ev, SK.gainMult(st.moves, !!level.timed))).qi;
+      var g1 = SK.gain(ev, SK.gainMult(st.moves, !!level.timed));
+      st.earned += g1;
+      st.qi = SK.addQi(st.qi, g1).qi;
       for (let j = 0; j < ev.cells.length; j++) {
         if (ev.cells[j].t >= 0) st.collected[ev.cells[j].t] = (st.collected[ev.cells[j].t] || 0) + 1;
       }
@@ -203,7 +205,8 @@ function playGame(level, seed, useSkills) {
    * useSkills 默认跟随命令行开关，对比回归时会显式传 false / true。 */
   const st = {
     qi: SK.qiStartFor(level), score: 0, collected: collected, obstCleared: 0,
-    moves: moves, skills: 0, on: useSkills == null ? SKILL_MODE : !!useSkills
+    moves: moves, skills: 0, earned: 0, spent: 0,
+    on: useSkills == null ? SKILL_MODE : !!useSkills
   };
 
   function done() {
@@ -227,6 +230,7 @@ function playGame(level, seed, useSkills) {
       const cost = SK.cost(b, cast.id);
       if (cost <= st.qi && castSkill(rs, b, cast, level, st)) {
         st.qi -= cost;
+        st.spent += cost;
         st.skills++;
         continue;                     /* 技能不吃步数 */
       }
@@ -240,7 +244,9 @@ function playGame(level, seed, useSkills) {
       const ev = res.events[i];
       if (ev.kind !== 'clear') continue;
       score += ev.score;
-      st.qi = SK.addQi(st.qi, SK.gain(ev, SK.gainMult(moves, !!level.timed))).qi;
+      var g2 = SK.gain(ev, SK.gainMult(moves, !!level.timed));
+      st.earned += g2;
+      st.qi = SK.addQi(st.qi, g2).qi;
       for (let j = 0; j < ev.cells.length; j++) if (ev.cells[j].t >= 0) collected[ev.cells[j].t] = (collected[ev.cells[j].t] || 0) + 1;
       for (let j = 0; j < ev.obstacles.length; j++) if (ev.obstacles[j].broken) obstCleared++;
       if (ev.cascade > maxCascade) maxCascade = ev.cascade;
@@ -251,7 +257,8 @@ function playGame(level, seed, useSkills) {
   const win = done();
   const total = score + st.score;
   const fullScore = win ? total + moves * CFG.SCORE_MOVE_LEFT : total;
-  return { win: win, score: fullScore, rawScore: total, movesLeft: moves, cleared: obstCleared + st.obstCleared, maxCascade: maxCascade, skills: st.skills };
+  return { win: win, score: fullScore, rawScore: total, movesLeft: moves, cleared: obstCleared + st.obstCleared,
+           maxCascade: maxCascade, skills: st.skills, earned: st.earned, spent: st.spent };
 }
 
 /* ---------- 统计输出 ---------- */
@@ -344,6 +351,7 @@ if (SKILL_MODE) {
   for (let li = 0; li < lvList.length; li++) {
     const lv = lvList[li];
     let w0 = 0, w1 = 0, s0 = 0, s1 = 0, skillSum = 0, score0 = 0, score1 = 0, mv0 = 0, mv1 = 0;
+    let earnSum = 0, spendSum = 0;
     for (let i = 0; i < RUNS; i++) {
       const seed = 1000 + li * 7919 + i * 13;
       const r0 = playGame(lv, seed, false);
@@ -355,18 +363,21 @@ if (SKILL_MODE) {
       if (r1.score >= lv.stars[2]) s1++;
       score1 += r1.score; mv1 += r1.movesLeft;
       skillSum += r1.skills;
+      earnSum += r1.earned; spendSum += r1.spent;
     }
     before.push({ id: lv.id, win: w0 / RUNS, three: s0 / RUNS, score: score0 / RUNS, mv: mv0 / RUNS });
-    after.push({ id: lv.id, win: w1 / RUNS, three: s1 / RUNS, score: score1 / RUNS, mv: mv1 / RUNS, skills: skillSum / RUNS });
+    after.push({ id: lv.id, win: w1 / RUNS, three: s1 / RUNS, score: score1 / RUNS, mv: mv1 / RUNS,
+                 skills: skillSum / RUNS, earned: earnSum / RUNS, spent: spendSum / RUNS });
   }
   console.log('局内技能回归（每关 ' + RUNS + ' 局，同种子对照）' + (SKILL_MAX ? ' · 上界模式：灵力全砸移山' : ' · 策略模式：会用技能') + '\n');
-  console.log('关卡  胜率(无→有)      变化     三星率(无→有)  平均分(无→有)       剩余步(无→有)  放技能');
-  let tooEasy = [], rescued = 0;
+  console.log('关卡  胜率(无→有)      变化     三星率(无→有)  平均分(无→有)       剩余步(无→有)  放技能  灵力收入');
+  let tooEasy = [], rescued = 0, earnTot = 0, skillTot = 0;
   for (let i = 0; i < before.length; i++) {
     const b0 = before[i], a0 = after[i];
     const d = a0.win - b0.win;
     if (a0.win > 0.995 && b0.win <= 0.995) tooEasy.push(a0.id);
     if (b0.win < 0.5 && a0.win >= 0.5) rescued++;
+    earnTot += a0.earned; skillTot += a0.skills;
     console.log(
       String(b0.id).padStart(3) + '   ' +
       ((b0.win * 100).toFixed(0) + '%→' + (a0.win * 100).toFixed(0) + '%').padStart(11) + '  ' +
@@ -374,7 +385,8 @@ if (SKILL_MODE) {
       ((b0.three * 100).toFixed(0) + '%→' + (a0.three * 100).toFixed(0) + '%').padStart(11) + '  ' +
       ((b0.score / 1000).toFixed(1) + 'k→' + (a0.score / 1000).toFixed(1) + 'k').padStart(12) + '  ' +
       ((b0.mv.toFixed(1) + '→' + a0.mv.toFixed(1))).padStart(11) + '  ' +
-      a0.skills.toFixed(1).padStart(5)
+      a0.skills.toFixed(1).padStart(5) + '  ' +
+      a0.earned.toFixed(0).padStart(7)
     );
   }
   const avg0 = before.reduce(function (a, x) { return a + x.win; }, 0) / before.length;
