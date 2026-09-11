@@ -65,6 +65,15 @@
       <div class="skill-slots" id="skillSlots"></div>
       <div class="color-ring hidden" id="colorRing"></div>
       <div class="skill-note hidden" id="skillNote"></div>
+      <!-- 长按 / 悬停技能图标弹出的说明卡：第一次用某个技能时的主要解惑入口 -->
+      <div class="skill-tip hidden" id="skillTip">
+        <div class="tip-head">
+          <img id="skillTipIcon" alt="">
+          <b id="skillTipName"></b>
+          <span class="tip-cost" id="skillTipCost"></span>
+        </div>
+        <div class="tip-desc" id="skillTipDesc"></div>
+      </div>
     </div>
   </main>
 
@@ -190,6 +199,7 @@
       <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
       <div class="btn-col">
         <button id="btnResume" class="primary" data-i18n="resume">继续</button>
+        <button id="btnPauseSkill" class="ghost" data-i18n="skillHelp">技能说明</button>
         <button id="btnPauseRetry" class="ghost" data-i18n="retry">重玩本关</button>
         <button id="btnPauseSet" class="ghost" data-i18n="settings">设置</button>
         <button id="btnPauseMap" class="ghost" data-i18n="toMap">关卡地图</button>
@@ -318,6 +328,17 @@
         <button id="btnLastStandYes" class="primary"></button>
         <button id="btnLastStandNo" class="ghost" data-i18n="lastStandNo">算了，认输</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 局内技能说明：首次拿到技能栏时自动弹一次，之后可从暂停面板重看 -->
+  <div id="skillIntro" class="overlay hidden">
+    <div class="panel skill-intro-panel">
+      <h2 data-i18n="skill_intro_title">灵力 · 局内技能</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <p class="skill-intro-lead" id="skillIntroLead"></p>
+      <div class="skill-intro-list" id="skillIntroList"></div>
+      <button id="btnSkillIntroOk" class="primary wide" data-i18n="skill_intro_ok">知道了，开打</button>
     </div>
   </div>
 

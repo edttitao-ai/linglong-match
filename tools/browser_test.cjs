@@ -402,14 +402,17 @@ const STATE_DUMP = `(function () {
 
 /* 图片体检：把页面上所有 <img>（包含隐藏界面里的）过一遍。
  * display:none 的图也会加载，所以一次扫描就能覆盖全部界面，
- * 不用挨个 showScreen。加载失败 = complete 但 naturalWidth 为 0。 */
+ * 不用挨个 showScreen。加载失败 = complete 但 naturalWidth 为 0。
+ * 没有 src（等运行时才填的空槽）不算坏图，跳过。 */
 const IMAGE_AUDIT = `(function () {
   var bad = [], all = document.querySelectorAll('img');
   for (var i = 0; i < all.length; i++) {
     var im = all[i];
+    var src = im.getAttribute('src');
+    if (!src) continue;
     if (!im.complete || im.naturalWidth === 0) {
       var box = im.getBoundingClientRect();
-      bad.push({ src: im.getAttribute('src') || '(空)', cls: im.className || '',
+      bad.push({ src: src, cls: im.className || '',
                  w: Math.round(box.width), h: Math.round(box.height), visible: box.width > 0 });
     }
   }
@@ -496,6 +499,109 @@ const IMAGE_AUDIT = `(function () {
     }
     report('页面所有 <img> 都能加载（DOM ' + imgs.refs.dom + ' 个 / 清单 ' + imgs.refs.assets + ' 张）',
       imgs.bad.length === 0, imgs.bad.length ? imgs.bad.length + ' 张加载失败' : '');
+
+    /* 2.5 新手教学 + 说明卡（技能「第一次用不知道干什么」的解法）
+     * 触屏要单独测：手机没有 hover，长按是唯一入口，而且长按不能顺手把技能放出去。 */
+    console.log('\n[2.5] 技能教学与说明卡');
+    await cdp.send('Page.navigate', { url: base + '/index.html?level=3' });
+    await waitFor(function () {
+      return cdp.evaluate('!!(window.LL && LL.Game && LL.Assets.ready && LL.Game.level)');
+    }, 20000, '关卡就绪');
+    await waitFor(function () { return cdp.evaluate('LL.Game.state === "playing"'); }, 15000, '进入可操作状态');
+
+    const intro = await cdp.evaluate(`(function () {
+      var G = LL.Game, SK = LL.Skills;
+      var t = { steps: [], fail: [] };
+      function ck(c, m) { t.steps.push((c ? 'ok  ' : 'FAIL ') + m); if (!c) t.fail.push(m); }
+      LL.Progress.data.seen = {};
+      G.maybeShowSkillIntro();
+      var el = document.getElementById('skillIntro');
+      ck(!el.classList.contains('hidden'), '首次进关自动弹出技能说明');
+      var rows = document.querySelectorAll('#skillIntroList .si-row');
+      ck(rows.length === SK.order().length, '说明卡列出全部 ' + SK.order().length + ' 个技能（实际 ' + rows.length + '）');
+      var bad = [];
+      for (var i = 0; i < rows.length; i++) {
+        var im = rows[i].querySelector('img');
+        var nm = rows[i].querySelector('.si-head b');
+        var co = rows[i].querySelector('.si-cost');
+        var de = rows[i].querySelector('.si-desc');
+        if (!im || !im.src || im.src.indexOf('ach_') >= 0) bad.push('图标');
+        if (!nm || nm.textContent.length < 2) bad.push('名字');
+        if (!co || co.textContent.length < 2) bad.push('消耗');
+        if (!de || de.textContent.length < 8) bad.push('说明');
+      }
+      ck(bad.length === 0, '每条都有图标/名字/消耗/一句话说明' + (bad.length ? '（缺 ' + bad.join(',') + '）' : ''));
+      var lead = document.getElementById('skillIntroLead');
+      ck(lead && lead.textContent.length > 20, '有一段总说明（灵力怎么来、技能不吃步数）');
+      ck(document.querySelectorAll('#skillIntroList img').length === SK.order().length, '每条都带图标');
+      t.steps.forEach(function (s) { if (s.indexOf('ok  ') !== 0) console.log('  ✗ ' + s.slice(5)); });
+      return { steps: t.steps, fail: t.fail };
+    })()`);
+    report('首次教学 ' + (intro.steps.length - intro.fail.length) + '/' + intro.steps.length + ' 项',
+      intro.fail.length === 0, intro.fail.slice(0, 3).join(' | '));
+
+    /* 关闭后不再弹 */
+    const once = await cdp.evaluate(`(function () {
+      LL.UI.hideSkillIntro();
+      var a = LL.Progress.hasSeen('skills');
+      LL.Game.maybeShowSkillIntro();
+      var b = document.getElementById('skillIntro').classList.contains('hidden');
+      return { seen: a, staysHidden: b };
+    })()`);
+    report('看过之后不再弹（hasSeen=' + once.seen + '）', once.seen && once.staysHidden, '');
+
+    /* 触屏短按 = 放技能；触屏长按 = 看说明且不放技能 */
+    const slotPos = await cdp.evaluate(
+      '(function(){var s=document.querySelectorAll(".skill-slot")[3].getBoundingClientRect();' +
+      'return {x:Math.round(s.left+s.width/2), y:Math.round(s.top+s.height/2)};})()');
+    const touchStart = { type: 'touchStart', touchPoints: [{ x: slotPos.x, y: slotPos.y }] };
+    const touchEnd = { type: 'touchEnd', touchPoints: [] };
+
+    await cdp.send('Input.dispatchTouchEvent', touchStart);
+    await new Promise(function (r) { setTimeout(r, 700); });
+    const tip = await cdp.evaluate(`(function () {
+      var el = document.getElementById('skillTip');
+      return { shown: !el.classList.contains('hidden'),
+               name: (document.getElementById('skillTipName') || {}).textContent,
+               desc: (document.getElementById('skillTipDesc') || {}).textContent,
+               cost: (document.getElementById('skillTipCost') || {}).textContent,
+               aim: LL.Game.aim && LL.Game.aim.id };
+    })()`);
+    await cdp.send('Input.dispatchTouchEvent', touchEnd);
+    await new Promise(function (r) { setTimeout(r, 200); });
+    const tipAfter = await cdp.evaluate(
+      "({shown: !document.getElementById('skillTip').classList.contains('hidden'), aim: LL.Game.aim && LL.Game.aim.id})");
+    report('触屏长按弹出说明卡：' + tip.name + '（' + tip.cost + '）',
+      tip.shown && tip.desc.length > 8, tip.desc);
+    report('长按不误放技能（松手后仍未进入瞄准态）', !tipAfter.aim && !tip.aim, 'aim=' + tipAfter.aim);
+    report('松手后说明卡先留着（触屏来不及看就消失等于没有）', tipAfter.shown, '');
+
+    /* 短按仍然正常放技能（先补满灵力：移山 60 点，开局只有 30） */
+    await new Promise(function (r) { setTimeout(r, 2800); });   /* 等说明卡自动收起 */
+    await cdp.evaluate('LL.Game.qi = 120; LL.UI.buildSkillBar(); true');
+    await cdp.send('Input.dispatchTouchEvent', touchStart);
+    await new Promise(function (r) { setTimeout(r, 90); });
+    await cdp.send('Input.dispatchTouchEvent', touchEnd);
+    await new Promise(function (r) { setTimeout(r, 250); });
+    const tap = await cdp.evaluate("({aim: LL.Game.aim && LL.Game.aim.id, note: (document.getElementById('skillNote')||{}).textContent})");
+    report('触屏短按正常进入瞄准态（' + (tap.aim || '无') + '）', tap.aim === 'cross', '提示：' + tap.note);
+    report('瞄准提示说的是「这一下会发生什么」而不是「选目标」',
+      !!tap.note && tap.note.indexOf('整行') >= 0, tap.note);
+    await cdp.evaluate('LL.Game.cancelAim(); true');
+
+    /* 暂停面板能重看说明 */
+    const help = await cdp.evaluate(`(function () {
+      LL.Game.pause();
+      var btn = document.getElementById('btnPauseSkill');
+      if (!btn) return { ok: false, why: '暂停面板没有技能说明按钮' };
+      btn.click();
+      var el = document.getElementById('skillIntro');
+      var ok = !el.classList.contains('hidden') && document.querySelectorAll('#skillIntroList .si-row').length === LL.Skills.order().length;
+      LL.UI.hideSkillIntro();
+      LL.Game.resume();
+      return { ok: ok, why: '' };
+    })()`);
+    report('暂停面板可重看技能说明', help.ok, help.why);
 
     /* 2. 技能演练（分步执行，每步之间等动画收束） */
     console.log('\n[2] 技能与灵力演练（第 19 关 · 石锁盘面）');

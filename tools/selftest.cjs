@@ -495,7 +495,8 @@ section('8. 模块 API 完整性（源码引用的方法必须存在）');
       'showCheckin', 'hideCheckin', 'buildCheckin', 'claimStreak', 'streakRewardLabel',
       'showQuests', 'hideQuests', 'buildQuests', 'claimQuest', 'claimAllQuests', 'rerollQuest',
       'buildBoostBar', 'onBoosterTap', 'boostNote', 'showTab', 'buildEndlessPane', 'buildTimedPane',
-      'buildAchievementsPane', 'buildMap', 'updateSoundBtn', 'syncSettingsUI'],
+      'buildAchievementsPane', 'buildMap', 'updateSoundBtn', 'syncSettingsUI',
+      'showSkillIntro', 'hideSkillIntro', 'buildSkillIntro', 'showSkillTip', 'hideSkillTip', 'bindSkillSlot'],
     HUD: ['init', 'setup', 'setScore', 'setMoves', 'setTimeLeft', 'updateObjectives', 'banner', 'hideBanner'],
     Game: ['init', 'startLevel', 'startDaily', 'startEndless', 'startTimed', 'start', 'restart',
       'restartRun', 'nextLevel', 'update', 'draw', 'view', 'canInput', 'setSelected', 'setHover',
@@ -508,6 +509,7 @@ section('8. 模块 API 完整性（源码引用的方法必须存在）');
       'reviveCountOf', 'addRevive', 'streakStatus', 'claimStreak', 'dailyStars', 'recordDaily',
       'dailyMonth', 'ensureQuests', 'questState', 'addQuestProgress', 'claimQuest', 'claimQuestBonus',
       'rerollQuest', 'boosterCount', 'addBooster', 'useBooster', 'buyBooster', 'armedList', 'armBooster',
+      'hasSeen', 'markSeen',
       'weekKey', 'recordEndless', 'recordTimed', 'bumpStat', 'setStatMax', 'checkAchievements',
       'achievementOf', 'achievementCount'],
     Board: ['create', 'canSwap', 'swapTiles', 'findMatches', 'matchThrough', 'findAllMoves',
@@ -701,7 +703,9 @@ section('9. 局内技能与灵力');
     'Game 里扣步数只出现在 attemptSwap 一处');
   eq((gsrc.match(/this\.movesLeft--/g) || []).length, 1, '扣步数只发生一次（技能一律不吃步数）');
 
-  /* 9k. 技能资产与文案齐全（图标 + 音效 + 中英文案） */
+  /* 9k. 技能资产与文案齐全（图标 + 音效 + 中英文案）
+   * 每个技能都要有「名字 / 一句话效果 / 瞄准提示」三份文案：
+   * 第一次用的人只能靠这三条知道技能是干什么的，缺一条就等于没有说明。 */
   const imgKeys = LL.Assets.IMAGE_LIST || [];
   const sfxKeys = LL.Assets.SFX_LIST || [];
   const zhDict = (LL.LANG && LL.LANG.zh) || {};
@@ -711,15 +715,44 @@ section('9. 局内技能与灵力');
     const d = SK.def(id);
     if (imgKeys.indexOf(d.icon) < 0) missAssets.push('图标 ' + d.icon);
     if (sfxKeys.indexOf('skill_' + id) < 0) missAssets.push('音效 skill_' + id);
-    if (!zhDict['skill_' + id]) missAssets.push('中文案 skill_' + id);
-    if (!enDict['skill_' + id]) missAssets.push('英文案 skill_' + id);
+    ['skill_' + id, 'skill_' + id + '_d', 'skill_' + id + '_use'].forEach(function (k) {
+      if (!zhDict[k]) missAssets.push('中文案 ' + k);
+      if (!enDict[k]) missAssets.push('英文案 ' + k);
+    });
   });
   ['skillAimHint', 'skillBadTarget', 'skillNoQi', 'skillPickColor', 'qi', 'skillOverflow',
-    'lastStandTitle', 'lastStandMsg', 'lastStandYes', 'lastStandCost'].forEach(function (k) {
+    'lastStandTitle', 'lastStandMsg', 'lastStandYes', 'lastStandCost',
+    'skill_intro_title', 'skill_intro_lead', 'skill_intro_ok', 'skillHelp',
+    'skillTipCost', 'skillTipFree'].forEach(function (k) {
       if (!zhDict[k]) missAssets.push('中文案 ' + k);
       if (!enDict[k]) missAssets.push('英文案 ' + k);
     });
   eq(missAssets.length, 0, '技能资产与文案齐全' + (missAssets.length ? '：' + missAssets.join(' | ') : ''));
+
+  /* 9m. 新手教学的「看过」标记：首次弹一次，之后不再打扰 */
+  const seenBak = LL.Progress.data.seen;
+  LL.Progress.data.seen = {};
+  eq(LL.Progress.hasSeen('skills'), false, '新存档未看过技能教学');
+  LL.Progress.markSeen('skills');
+  eq(LL.Progress.hasSeen('skills'), true, '标记后为已看过');
+  LL.Progress.data.seen = undefined;
+  eq(LL.Progress.hasSeen('skills'), false, '老存档缺 seen 字段时不报错（惰性建键）');
+  LL.Progress.markSeen('skills');
+  eq(LL.Progress.hasSeen('skills'), true, '缺字段也能补上');
+  LL.Progress.data.seen = seenBak;
+
+  /* 9n. 技能的名字/效果/提示三类文案都不该带占位符——
+   * 它们拼进说明卡与教学面板时不做参数替换，漏一个就会把「{n}」原样显示给玩家。 */
+  const badPlaceholder = [];
+  order.forEach(function (id) {
+    ['skill_' + id, 'skill_' + id + '_d', 'skill_' + id + '_use'].forEach(function (k) {
+      [['zh', zhDict[k]], ['en', enDict[k]]].forEach(function (pair) {
+        if (pair[1] && /\{[a-z]+\}/.test(pair[1])) badPlaceholder.push(pair[0] + ' ' + k);
+      });
+    });
+  });
+  eq(badPlaceholder.length, 0, '技能名称/效果/提示文案不含未替换占位符' +
+    (badPlaceholder.length ? '：' + badPlaceholder.join(' | ') : ''));
 
   /* 9l. 技能图标文件真的存在（生成脚本跑过） */
   const imgDir = path.join(__dirname, '..', 'assets', 'img');

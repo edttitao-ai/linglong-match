@@ -86,7 +86,15 @@
         lastStand: $('#lastStand'),
         lastStandMsg: $('#lastStandMsg'),
         lastStandCost: $('#lastStandCost'),
-        btnLastStandYes: $('#btnLastStandYes')
+        btnLastStandYes: $('#btnLastStandYes'),
+        skillTip: $('#skillTip'),
+        skillTipIcon: $('#skillTipIcon'),
+        skillTipName: $('#skillTipName'),
+        skillTipCost: $('#skillTipCost'),
+        skillTipDesc: $('#skillTipDesc'),
+        skillIntro: $('#skillIntro'),
+        skillIntroLead: $('#skillIntroLead'),
+        skillIntroList: $('#skillIntroList')
       };
 
       /* 标题页 */
@@ -195,6 +203,13 @@
         LL.Audio.play('click');
         LL.Game.declineLastStand();
       });
+
+      /* 技能说明：首次自动弹一次，之后从暂停面板重看 */
+      U.on($('#btnPauseSkill'), 'click', function () { LL.Audio.play('click'); self.showSkillIntro(); });
+      U.on($('#btnSkillIntroOk'), 'click', function () { LL.Audio.play('click'); self.hideSkillIntro(); });
+      U.on($('#skillIntro'), 'click', function (e) {
+        if (e.target === self.els.skillIntro) self.hideSkillIntro();   /* 点面板外也能关 */
+      });
       /* 窄屏横竖屏切换时技能栏高度会变，棋盘保留区要跟着重算 */
       U.on(global, 'resize', function () { self.syncBoardInset(); });
 
@@ -226,6 +241,7 @@
         U.show(this.els.result, false);
         U.show(this.els.revive, false);
         U.show(this.els.lastStand, false);
+        U.show(this.els.skillIntro, false);
       }
       if (name !== 'game' && name !== 'settings') U.show(this.els.settings, false);
       U.show(this.els.hud, name === 'game');
@@ -616,8 +632,8 @@
           btn.innerHTML =
             '<img src="' + LL.Assets.path(info.icon) + '" alt="">' +
             '<span class="s-cost">' + (c.cost === 0 ? I18N.t('skillFree') : c.cost) + '</span>';
-          btn.title = I18N.t('skill_' + id) + ' · ' + c.cost;
-          btn.addEventListener('click', function () { self.onSkillTap(id); });
+          btn.title = I18N.t('skill_' + id);
+          self.bindSkillSlot(btn, id);
           slots.appendChild(btn);
         });
       }
@@ -657,6 +673,110 @@
       LL.Game.castSkill('color', aim.cell, t, aim.cost);
     },
 
+    /* 技能槽的三种查看方式：鼠标悬停、触屏长按、键盘 title。
+     * 手机上没有 hover，所以长按是触屏唯一的查看入口——松手后卡片再留 2.6 秒，
+     * 不然一抬手就消失，玩家根本来不及看。 */
+    bindSkillSlot(btn, id) {
+      const self = this;
+      let holdTimer = null, hideTimer = null, longPressed = false, pType = 'mouse';
+      const stopHold = function () { clearTimeout(holdTimer); holdTimer = null; };
+
+      btn.addEventListener('pointerenter', function (e) {
+        pType = e.pointerType || 'mouse';
+        if (pType !== 'mouse') return;          /* 触屏靠长按，不要一碰就弹 */
+        clearTimeout(hideTimer);
+        self.showSkillTip(id);
+      });
+      btn.addEventListener('pointerleave', function () {
+        stopHold();
+        clearTimeout(hideTimer);
+        if (pType === 'mouse') self.hideSkillTip();
+        else hideTimer = setTimeout(function () { self.hideSkillTip(); }, 2600);
+      });
+      btn.addEventListener('pointerdown', function (e) {
+        pType = e.pointerType || 'mouse';
+        longPressed = false;
+        clearTimeout(hideTimer);
+        stopHold();
+        holdTimer = setTimeout(function () {
+          longPressed = true;
+          self.showSkillTip(id);
+          LL.Audio.play('click', { rate: 0.9, vol: 0.45 });
+        }, 380);
+      });
+      btn.addEventListener('pointerup', stopHold);
+      btn.addEventListener('pointercancel', function () { stopHold(); self.hideSkillTip(); });
+      btn.addEventListener('click', function () {
+        clearTimeout(hideTimer);
+        /* 长按只是「看一眼说明」，不应该顺手把技能放出去 */
+        if (longPressed) { longPressed = false; return; }
+        self.hideSkillTip();
+        self.onSkillTap(id);
+      });
+    },
+
+    showSkillTip(id) {
+      const el = this.els.skillTip;
+      if (!el || !LL.Skills.def(id)) return;
+      const cost = LL.Skills.cost(LL.Game.board, id);
+      U.show(this.els.skillNote, false);
+      if (this.els.skillTipIcon) this.els.skillTipIcon.src = LL.Assets.path(LL.Skills.def(id).icon);
+      if (this.els.skillTipName) this.els.skillTipName.textContent = I18N.t('skill_' + id);
+      if (this.els.skillTipCost) {
+        this.els.skillTipCost.textContent = cost === 0
+          ? I18N.t('skillTipFree')
+          : I18N.t('skillTipCost', { n: cost });
+      }
+      if (this.els.skillTipDesc) this.els.skillTipDesc.textContent = I18N.t('skill_' + id + '_d');
+      this._tipSkill = id;
+      U.show(el, true);
+    },
+
+    hideSkillTip() {
+      if (this._tipSkill == null) return;
+      this._tipSkill = null;
+      U.show(this.els.skillTip, false);
+    },
+
+    /* ---------- 技能说明（首次教学 + 暂停面板可重看） ---------- */
+
+    buildSkillIntro() {
+      const list = this.els.skillIntroList;
+      if (!list) return;
+      list.innerHTML = '';
+      if (this.els.skillIntroLead) {
+        /* 用 <b> 标出「不能购买」——这是玩家最容易误解的一点 */
+        const raw = I18N.t('skill_intro_lead');
+        this.els.skillIntroLead.innerHTML = raw.split('**').map(function (seg, i) {
+          return i % 2 ? '<b>' + seg + '</b>' : seg;
+        }).join('');
+      }
+      LL.Skills.order().forEach(function (id) {
+        const info = LL.Skills.def(id);
+        const row = U.el('div', 'si-row');
+        row.innerHTML =
+          '<img src="' + LL.Assets.path(info.icon) + '" alt="">' +
+          '<div class="si-body">' +
+            '<div class="si-head"><b>' + I18N.t('skill_' + id) + '</b>' +
+            '<span class="si-cost">' + I18N.t('skillTipCost', { n: info.cost }) + '</span></div>' +
+            '<div class="si-desc">' + I18N.t('skill_' + id + '_d') + '</div>' +
+          '</div>';
+        list.appendChild(row);
+      });
+    },
+
+    showSkillIntro() {
+      this.buildSkillIntro();
+      this.hideSkillTip();
+      U.show(this.els.skillIntro, true);
+    },
+
+    hideSkillIntro() {
+      U.show(this.els.skillIntro, false);
+      /* 关闭才算「看过」：中途刷新页面还能再看到一次，不会永久错过 */
+      LL.Progress.markSeen('skills');
+    },
+
     onSkillTap(id) { LL.Game.useSkill(id); },
 
     /* 灵力入账的轻量更新：每次消除都会走到这里，所以不重建 DOM */
@@ -685,6 +805,7 @@
     skillNote(text) {
       const el = this.els.skillNote;
       if (!el || !text) return;
+      this.hideSkillTip();
       el.textContent = text;
       U.show(el, true);
       clearTimeout(this._skillNoteTimer);

@@ -18,7 +18,8 @@
     stats: { maxCascade: 0, specialsFired: 0, obstaclesBroken: 0, revives: 0, skillsUsed: 0, lastStands: 0 },
     achievements: {},
     boosters: { moves: 0, wind: 0, shuffle: 0 },
-    armed: { moves: false, wind: false, shuffle: false }
+    armed: { moves: false, wind: false, shuffle: false },
+    seen: { skills: false }         // 一次性教学标记：看过就不再弹
   };
   const DEFAULT_SET = { volume: 0.8, muted: false, lang: 'zh' };
 
@@ -392,6 +393,15 @@
       this.data.revive[id] = this.reviveCountOf(id) + 1;
       this.save();
       return this.data.revive[id];
+    },
+
+    /* 一次性教学标记：技能栏这类「第一次见到需要解释」的东西靠它只弹一次。
+     * 用惰性建键而不是固定字段，老存档（没有 seen）也能直接跑。 */
+    hasSeen(key) { return !!(this.data.seen && this.data.seen[key]); },
+    markSeen(key) {
+      const s = this.data.seen || (this.data.seen = {});
+      s[key] = true;
+      this.save();
     },
 
     resetAll() {

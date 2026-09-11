@@ -275,7 +275,9 @@
       this.aim = { id: id, cost: c.cost, stage: 'cell', cell: null };
       this.selected = null;
       LL.Audio.play('click', { rate: 1.1 });
-      LL.UI.skillNote(I18N.t('skillAimHint'));
+      /* 提示直接说「这一下会发生什么」，而不是笼统的「选目标」——
+       * 技能的作用必须在出手之前就说清楚，否则玩家只能盲点。 */
+      LL.UI.skillNote(I18N.t('skill_' + id + '_use'));
       LL.UI.buildSkillBar();
       return true;
     },
@@ -301,6 +303,7 @@
         aim.cell = { r: cell.r, c: cell.c };
         aim.stage = 'color';
         LL.Audio.play('click', { rate: 1.16 });
+        LL.UI.skillNote(I18N.t('skillPickColor') + ' · ' + I18N.t('skillAimHint'));
         LL.UI.buildSkillBar();
         return;
       }
@@ -379,6 +382,17 @@
         Anim.addFlash(0.22);
       }
       Anim.text(cx, cy - 30, I18N.t('skill_' + id), { size: 34, color: '#8a3a1c', life: 980, stroke: '#fff8e6' });
+    },
+
+    /* 技能栏第一次出现时教一次。
+     * 技能再强，玩家不知道它干什么就等于没有——所以第一次拿到必须先讲清楚，
+     * 之后靠「长按图标看说明」自助查（见 UI.bindSkillSlot）。 */
+    maybeShowSkillIntro() {
+      if (!SK.order().length) return false;
+      if (LL.Progress.hasSeen('skills')) return false;
+      /* 不在「看过」时立刻落盘：关闭教学面板才算看过，中途刷新还能再看到 */
+      LL.UI.showSkillIntro();
+      return true;
     },
 
     /* ---------------- 绝处逢生 ----------------
@@ -833,7 +847,11 @@
 
       if (this.state === 'intro') {
         this.introT -= dt;
-        if (this.introT <= 0) { this.state = 'playing'; this.notifyInput(); }
+        if (this.introT <= 0) {
+          this.state = 'playing';
+          this.notifyInput();
+          this.maybeShowSkillIntro();
+        }
       }
 
       /* 限时模式：只在玩家可操作时走表，连锁动画不吞时间 */

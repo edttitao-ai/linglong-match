@@ -1445,3 +1445,114 @@
   .qi-num b { font-size: 12px; }
   .color-dot { width: 26px; height: 26px; }
 }
+
+/* ================= 技能说明（长按 / 悬停说明卡 + 首次教学） ================= */
+
+.skill-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 9px 13px 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 252, 240, 0.98), rgba(246, 236, 214, 0.98));
+  border: 1.5px solid var(--gold);
+  box-shadow: 0 10px 24px rgba(70, 44, 12, 0.26), inset 0 2px 0 rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.skill-tip .tip-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+.skill-tip .tip-head img { width: 22px; height: 22px; flex: 0 0 auto; }
+.skill-tip .tip-head b { font-size: 14px; color: var(--ink); }
+
+.skill-tip .tip-cost {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--indigo);
+  white-space: nowrap;
+}
+
+.skill-tip .tip-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* ---- 首次教学面板 ---- */
+
+.skill-intro-panel { max-width: 420px; }
+
+.skill-intro-lead {
+  margin: 2px 0 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  text-align: left;
+}
+
+.skill-intro-lead b { color: var(--cinnabar); }
+
+.skill-intro-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.si-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #FFFDF6, var(--paper-hi));
+  border: 1.5px solid var(--line);
+  box-shadow: 0 2px 0 rgba(122, 92, 52, 0.12);
+  text-align: left;
+}
+
+.si-row img { width: 30px; height: 30px; flex: 0 0 auto; margin-top: 1px; }
+.si-body { min-width: 0; flex: 1; }
+
+.si-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.si-head b { font-size: 14px; color: var(--ink); }
+
+.si-cost {
+  font-family: var(--font-num);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--indigo);
+  white-space: nowrap;
+}
+
+.si-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* 矮屏：教学面板收紧凑一点，保证四条能一屏看完 */
+@media (max-height: 620px) {
+  .si-row { padding: 6px 10px; }
+  .si-row img { width: 25px; height: 25px; }
+  .si-head b { font-size: 13px; }
+  .si-desc { font-size: 11.5px; line-height: 1.45; }
+  .skill-intro-lead { font-size: 12px; margin-bottom: 9px; }
+  .skill-intro-list { gap: 5px; margin-bottom: 12px; }
+}
