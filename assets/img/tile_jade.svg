@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#93E2C6"/><stop offset="1" stop-color="#2FA98C"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#12523F"/><stop offset="1" stop-color="#2FA98C"/>
+    </linearGradient>
+    <radialGradient id="hl" cx="0.34" cy="0.26" r="0.58">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.60"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="sh" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="2.4" stdDeviation="2.2" flood-color="#2b2118" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+  <g filter="url(#sh)"><path d="M50 7 A43 43 0 1 0 50 93 A43 43 0 1 0 50 7 Z M50 33 A17 17 0 1 1 50 67 A17 17 0 1 1 50 33 Z"
+      fill-rule="evenodd" fill="url(#g)" stroke="#12523F" stroke-width="2.8" stroke-linejoin="round"/>
+    <path d="M50 18 A32 32 0 0 1 78 34" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
+    <g fill="#12523F" opacity="0.5">
+      <circle cx="50" cy="18" r="2.1"/><circle cx="74" cy="32" r="2.1"/><circle cx="74" cy="68" r="2.1"/>
+      <circle cx="50" cy="82" r="2.1"/><circle cx="26" cy="68" r="2.1"/><circle cx="26" cy="32" r="2.1"/>
+    </g></g>
+  <g pointer-events="none"><path d="M50 7 A43 43 0 1 0 50 93 A43 43 0 1 0 50 7 Z M50 33 A17 17 0 1 1 50 67 A17 17 0 1 1 50 33 Z"
+      fill-rule="evenodd" fill="url(#hl)"/></g>
+</svg>

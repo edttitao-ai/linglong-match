@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f2e6cf">
+<title>玲珑消</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/anim.css">
+</head>
+<body>
+<div id="app">
+  <!-- 对局信息栏（宽屏在左，窄屏在顶） -->
+  <aside id="hud" class="hidden">
+    <div class="hud-top">
+      <button id="btnPause" class="icon-btn" type="button" data-i18n-title="pause" aria-label="暂停">
+        <img src="assets/img/ui_pause.svg" alt="">
+      </button>
+      <div class="lv-name" id="hudLevelName"></div>
+      <button id="btnSound" class="icon-btn" type="button" aria-label="音效">
+        <img id="btnSoundIcon" src="assets/img/ui_sound.svg" alt="">
+      </button>
+    </div>
+    <div class="hud-card" id="hudObjCard">
+      <div class="card-title" data-i18n="objectives">本关目标</div>
+      <div class="obj-list" id="hudObj"></div>
+    </div>
+    <div class="hud-card stats-card">
+      <div class="stat" id="hudMovesBox">
+        <div class="v" id="hudMoves">0</div>
+        <div class="k" data-i18n="moves">剩余步数</div>
+      </div>
+      <div class="stat">
+        <div class="v score" id="hudScore">0</div>
+        <div class="k" data-i18n="score">得分</div>
+      </div>
+    </div>
+    <div class="hud-foot">
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="keys">
+        <span><b>Esc</b> <i data-i18n="keyPause">暂停</i></span>
+        <span><b>M</b> <i data-i18n="keyMute">静音</i></span>
+        <span><b>R</b> <i data-i18n="keyRetry">重玩</i></span>
+        <span><b>空格</b> <i data-i18n="keySpeed">加速</i></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 棋盘 -->
+  <main id="boardWrap">
+    <canvas id="game"></canvas>
+    <div id="banner" class="banner">
+      <div id="bannerMain" class="banner-main"></div>
+      <div id="bannerSub" class="banner-sub"></div>
+    </div>
+  </main>
+
+  <!-- 加载 -->
+  <div id="loading" class="overlay">
+    <div class="panel load-panel">
+      <div class="seal">玲珑</div>
+      <h1 class="game-title" data-i18n="title">玲珑消</h1>
+      <div class="load-bar"><i id="loadBar"></i></div>
+      <div class="load-text" id="loadText" data-i18n="loading">正在备料…</div>
+    </div>
+  </div>
+
+  <!-- 标题 -->
+  <div id="title" class="overlay hidden">
+    <div class="title-wrap">
+      <div class="seal big">玲珑</div>
+      <h1 class="game-title" data-i18n="title">玲珑消</h1>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="sub" data-i18n="subtitle">三 消 · 国 风</div>
+      <div class="btn-col">
+        <button id="btnPlay" class="primary" data-i18n="play">开始游戏</button>
+        <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
+        <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
+      </div>
+      <div class="title-hint" data-i18n="titleHint">点击或拖动相邻两块交换，凑齐三连即可消除</div>
+    </div>
+  </div>
+
+  <!-- 关卡地图 -->
+  <div id="map" class="overlay hidden">
+    <div class="map-sheet">
+      <div class="roller top"></div>
+      <div class="map-head">
+        <button id="btnMapBack" class="icon-btn" type="button" data-i18n-title="back" aria-label="返回">
+          <img src="assets/img/ui_back.svg" alt="">
+        </button>
+        <h2 data-i18n="selectLevel">选择关卡</h2>
+        <div class="star-total" id="mapStars"></div>
+      </div>
+      <img class="cloud-rule map-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="map-grid" id="mapGrid"></div>
+      <div class="roller bottom"></div>
+    </div>
+  </div>
+
+  <!-- 暂停 -->
+  <div id="pause" class="overlay hidden">
+    <div class="panel">
+      <h2 data-i18n="paused">已暂停</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="btn-col">
+        <button id="btnResume" class="primary" data-i18n="resume">继续</button>
+        <button id="btnPauseRetry" class="ghost" data-i18n="retry">重玩本关</button>
+        <button id="btnPauseSet" class="ghost" data-i18n="settings">设置</button>
+        <button id="btnPauseMap" class="ghost" data-i18n="toMap">关卡地图</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结算 -->
+  <div id="result" class="overlay hidden">
+    <div class="panel result-panel">
+      <div class="res-badge hidden" id="resBadge">新纪录！</div>
+      <div id="resStars" class="res-stars">
+        <img class="res-star" src="assets/img/ui_star.svg" alt="">
+        <img class="res-star" src="assets/img/ui_star.svg" alt="">
+        <img class="res-star" src="assets/img/ui_star.svg" alt="">
+      </div>
+      <h2 id="resTitle">过关！</h2>
+      <div id="resTip" class="res-tip"></div>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <div class="res-rows">
+        <div class="res-row"><span data-i18n="finalScore">本关得分</span><b id="resScore">0</b></div>
+        <div class="res-row small"><span data-i18n="bestScore">最高分</span><b id="resBest">0</b></div>
+      </div>
+      <div class="btn-col">
+        <button id="btnResNext" class="primary" data-i18n="next">下一关</button>
+        <div class="btn-row">
+          <button id="btnResRetry" class="ghost" data-i18n="retry">重玩本关</button>
+          <button id="btnResMap" class="ghost" data-i18n="toMap">关卡地图</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div id="settings" class="overlay hidden">
+    <div class="panel">
+      <h2 data-i18n="settings">设置</h2>
+      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
+      <label class="set-row">
+        <span data-i18n="volume">音量</span>
+        <input id="setVolume" type="range" min="0" max="100" value="80">
+      </label>
+      <div class="set-row">
+        <span data-i18n="sound">音效</span>
+        <button id="setMute" class="toggle" type="button">开</button>
+      </div>
+      <div class="set-row">
+        <span data-i18n="language">语言</span>
+        <button id="setLang" class="toggle" type="button">中文</button>
+      </div>
+      <button id="btnReset" class="ghost danger wide" data-i18n="resetProgress">清除进度</button>
+      <button id="btnSetClose" class="primary" data-i18n="close">关闭</button>
+    </div>
+  </div>
+
+  <!-- 确认框 -->
+  <div id="confirm" class="overlay hidden">
+    <div class="panel small">
+      <p id="confirmText"></p>
+      <div class="btn-row">
+        <button id="btnConfirmYes" class="danger" type="button">确定</button>
+        <button id="btnConfirmNo" class="ghost" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/config.js"></script>
+<script src="lang/zh.js"></script>
+<script src="lang/en.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/board.js"></script>
+<script src="js/special.js"></script>
+<script src="js/resolver.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/anim.js"></script>
+<script src="js/render.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/input.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

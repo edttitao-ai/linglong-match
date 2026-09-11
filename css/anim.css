@@ -1,0 +1,69 @@
+/* 玲珑消 · anim.css — 界面动画 */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.7); }
+  70% { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* 星级：逐颗点亮（延迟由 nth-child 控制） */
+@keyframes starPop {
+  0% { filter: grayscale(1) opacity(0.28); transform: scale(0.72); }
+  55% { filter: none; transform: scale(1.28) rotate(-6deg); }
+  78% { transform: scale(0.96) rotate(2deg); }
+  100% { filter: none; transform: scale(1) rotate(0); }
+}
+
+@keyframes bannerShow {
+  0% { opacity: 0; transform: translate(-50%, -10px) scale(0.86); }
+  10% { opacity: 1; transform: translate(-50%, 0) scale(1.03); }
+  18% { transform: translate(-50%, 0) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 6px) scale(0.98); }
+}
+
+@keyframes movePulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.34); color: var(--cinnabar-hi); }
+  100% { transform: scale(1); }
+}
+
+#hudMoves.pulse { animation: movePulse 0.42s ease-out; display: inline-block; }
+
+/* 剩余步数告急：数值呼吸 */
+@keyframes lowPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.62; }
+}
+
+/* 当前关卡卡片：呼吸 */
+@keyframes breathe {
+  0%, 100% { transform: scale(1.04); box-shadow: 0 0 0 2px var(--gold-hi), 0 10px 20px rgba(150, 110, 20, 0.24); }
+  50% { transform: scale(1.055); box-shadow: 0 0 0 3px var(--gold-hi), 0 14px 26px rgba(150, 110, 20, 0.34); }
+}
+
+/* 印章：轻微呼吸（不做旋转，旋转会显得像 App 图标） */
+@keyframes sealBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+.load-panel .seal { animation: sealBreathe 3.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

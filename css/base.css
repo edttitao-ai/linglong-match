@@ -1,0 +1,130 @@
+/* 玲珑消 · base.css — 设计令牌（字体 / 色板 / 阴影）、重置、整体布局 */
+
+:root {
+  /* ---- 纸（60%） ---- */
+  --paper: #F2E6CF;
+  --paper-hi: #FBF6EA;
+  --paper-lo: #E8D9BC;
+  --card: #FDF8EC;
+
+  /* ---- 墨与线脚（30%） ---- */
+  --ink: #2B2620;
+  --ink-soft: #6B5B45;
+  --ink-faint: rgba(43, 38, 32, 0.42);
+  --line: #C8B08A;
+  --line-soft: rgba(122, 92, 52, 0.16);
+  --wood: #6B4B2A;
+  --wood-hi: #8A6236;
+  --wood-lo: #4A3320;
+
+  /* ---- 强调（10%） ---- */
+  --cinnabar: #B8342C;
+  --cinnabar-hi: #D9483C;
+  --cinnabar-lo: #8E231D;
+  --gold: #C9A227;
+  --gold-hi: #E8C86A;
+  --gold-lo: #8A5F18;
+  --jade: #4E7C4A;
+  --jade-hi: #6E9C6A;
+  --indigo: #2E4E7E;
+
+  /* ---- 字体三栈：正文用黑体、大字用楷体、数字用拉丁字体优先 ---- */
+  --font-ui: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "Microsoft YaHei",
+             "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans SC", "Segoe UI", sans-serif;
+  --font-title: "Kaiti SC", "STKaiti", "KaiTi", "楷体", "BiauKai", "DFKai-SB", serif;
+  --font-num: "Bahnschrift SemiBold", "DIN Alternate", "Avenir Next Condensed",
+              "Segoe UI Variable Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* ---- 立体感：硬边下压 + 柔和环境影 + 内高光 三层 ---- */
+  --sh-btn: 0 4px 0 var(--cinnabar-lo), 0 10px 18px rgba(120, 40, 24, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.38);
+  --sh-btn-press: 0 1px 0 var(--cinnabar-lo), 0 4px 8px rgba(120, 40, 24, 0.24), inset 0 2px 0 rgba(255, 255, 255, 0.28);
+  --sh-card: 0 2px 0 rgba(122, 92, 52, 0.16), inset 0 2px 0 rgba(255, 255, 255, 0.85);
+  --sh-panel: 0 24px 60px rgba(60, 40, 12, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font: 400 15px/1.7 var(--font-ui);
+  letter-spacing: 0;
+  color: var(--ink);
+  background-color: #efe2c6;
+  background-image:
+    radial-gradient(1200px 700px at 50% -10%, rgba(255, 252, 240, 0.85), rgba(255, 252, 240, 0) 70%),
+    url("../assets/img/bg_paper.svg");
+  background-size: auto, 420px 420px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  /* minmax(0,…)：内容较宽时列要能收缩，否则窄屏会被撑出滚动 */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+/* 显式定位：HUD 隐藏（display:none）时棋盘要能占满整屏 */
+#hud { grid-area: 1 / 1 / 2 / 2; }
+#boardWrap { grid-area: 2 / 1 / 3 / 2; }
+
+#boardWrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.hidden { display: none !important; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 16px;
+}
+
+img { -webkit-user-drag: none; }
+
+/* 数字统一等宽数字，避免分数跳动时整行抖 */
+.v, .lv-no, .res-row b, .star-total, .moves-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* 云纹分割线（标题、面板、地图共用） */
+.cloud-rule {
+  display: block;
+  width: 190px;
+  max-width: 68%;
+  height: auto;
+  opacity: 0.9;
+  margin: 2px auto;
+}
+
+/* 宽屏：信息栏移到左侧一列（auto 列，HUD 隐藏时自动收拢为 0） */
+@media (min-width: 780px) and (orientation: landscape) {
+  #app {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  #hud {
+    grid-area: 1 / 1 / 2 / 2;
+    width: 288px;
+  }
+  #boardWrap { grid-area: 1 / 2 / 2 / 3; }
+}

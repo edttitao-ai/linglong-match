@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="gl" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.6" flood-color="#d8c8ff" flood-opacity="0.9"/>
+    </filter>
+  </defs>
+  <g filter="url(#gl)">
+    <circle cx="50" cy="50" r="44" fill="#f8f3e4" stroke="#2b241c" stroke-width="3"/>
+    <path d="M50 6 a22 22 0 0 1 0 44 a22 22 0 0 0 0 44 a44 44 0 0 1 0 -88" fill="#2b241c"/>
+    <circle cx="50" cy="28" r="7.4" fill="#f8f3e4"/>
+    <circle cx="50" cy="72" r="7.4" fill="#2b241c"/>
+    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.6"/>
+  </g>
+</svg>

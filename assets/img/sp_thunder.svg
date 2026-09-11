@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="gl" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3.2" flood-color="#ffd98a" flood-opacity="0.95"/>
+    </filter>
+  </defs>
+  <g filter="url(#gl)">
+    <path d="M58 6 L24 54 h17 L38 94 L76 42 H55 Z" fill="#fff6cf" stroke="#8a5a12" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M54 20 L34 50 h14 L42 76" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
