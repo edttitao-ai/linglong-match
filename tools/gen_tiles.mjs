@@ -452,25 +452,25 @@ function iconAch(id) {
       `  <path d="M4.6 21.2 h14.8" fill="none" stroke="${INK}" stroke-width="1.9" stroke-linecap="round" opacity="0.7"/>\n` + tail;
   }
   /* 星阶：小有所成 / 渐入佳境 / 玲珑满堂 / 三星照胆 */
-  if (id === 'stars20') {
+  if (id === 'starsQuarter') {
     return head +
       `  <path d="${starPath(6.2, 7.8, 4.0, 1.7, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` +
       `  <path d="${starPath(17.8, 7.8, 4.0, 1.7, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` +
       `  <path d="${starPath(12, 17.0, 4.6, 2.0, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.2" stroke-linejoin="round"/>\n` + tail;
   }
-  if (id === 'stars50') {
+  if (id === 'starsHalf') {
     return head +
       `  <path d="M3.4 20.8 h5 v-4.4 h4.8 v-4.4 h4.6" fill="none" stroke="${INK}" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/>\n` +
       `  <path d="${starPath(18.2, 7.0, 4.4, 1.9, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>\n` + tail;
   }
-  if (id === 'stars90') {
+  if (id === 'starsMost') {
     return head +
       `  <circle cx="12" cy="12.4" r="7.4" fill="#FFF3C4" stroke="#8A5F18" stroke-width="1.5"/>\n` +
       `  <circle cx="12" cy="12.4" r="4.9" fill="none" stroke="${GOLD}" stroke-width="0.9" opacity="0.65"/>\n` +
       `  <path d="${starPath(4.4, 4.4, 2.5, 1.0, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="0.8"/>\n` +
       `  <path d="${starPath(19.8, 5.2, 2.1, 0.9, 0)}" fill="${GOLD_HI}" stroke="#8A5F18" stroke-width="0.8"/>\n` + tail;
   }
-  if (id === 'stars120') {
+  if (id === 'starsAll') {
     /* 北斗七星：唯一以「线」为主形的徽记，线要够重才看得出是星座而不是一堆点 */
     const d = [[4.8, 8.6], [8.2, 6.0], [11.6, 7.2], [14.2, 10.0], [14.8, 14.2], [19.0, 17.2], [13.4, 18.8]];
     let dots = '';
@@ -784,10 +784,10 @@ const files = {
   'board_frame.svg': boardFrame(),
   /* 成就徽记：与 Achievements.LIST 的 id 一一对应 */
   'ach_firstStar.svg': iconAch('firstStar'),
-  'ach_stars20.svg': iconAch('stars20'),
-  'ach_stars50.svg': iconAch('stars50'),
-  'ach_stars90.svg': iconAch('stars90'),
-  'ach_stars120.svg': iconAch('stars120'),
+  'ach_starsQuarter.svg': iconAch('starsQuarter'),
+  'ach_starsHalf.svg': iconAch('starsHalf'),
+  'ach_starsMost.svg': iconAch('starsMost'),
+  'ach_starsAll.svg': iconAch('starsAll'),
   'ach_allClear.svg': iconAch('allClear'),
   'ach_cascade8.svg': iconAch('cascade8'),
   'ach_specials100.svg': iconAch('specials100'),

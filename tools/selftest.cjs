@@ -424,7 +424,7 @@ section('6. 死局洗牌');
 section('7. 关卡数据合法性');
 {
   const levels = LL.LEVELS || [];
-  eq(levels.length, 50, '共 50 关');
+  eq(levels.length, 70, '共 70 关');
   const problems = [];
   levels.forEach(function (lv, i) {
     if (lv.id !== i + 1) problems.push('第 ' + lv.id + ' 关编号不连续');
@@ -954,6 +954,40 @@ section('12. 文案完整性');
     ((onlyZh.length || onlyEn.length)
       ? '：仅中文 ' + onlyZh.slice(0, 5).join(',') + ' ｜ 仅英文 ' + onlyEn.slice(0, 5).join(',')
       : '（各 ' + Object.keys(zh).length + ' 键）'));
+
+  /* 12e. 成就门槛与画卷门槛随关卡数走：加关卡时这两个系统必须一起缩放，
+   * 否则会出现「90 星就满画卷、而满星其实有 210」这种沉淀提前见底的情况。 */
+  const A = LL.Achievements;
+  const maxStars = A.MAX_STARS;
+  eq(maxStars, LL.LEVELS.length * 3, '满星上限 = 关卡数 × 3（' + maxStars + '）');
+  const tiers = A.SCROLL_TIERS;
+  let tierOk = tiers.length === 5 && tiers[4] === maxStars;
+  for (let i = 1; i < tiers.length; i++) if (tiers[i] <= tiers[i - 1]) tierOk = false;
+  ok(tierOk, '画卷门槛递增且最后一层等于满星（' + tiers.join(' / ') + '）');
+
+  const starAch = A.LIST.filter(function (a) {
+    return a.id === 'starsQuarter' || a.id === 'starsHalf' || a.id === 'starsMost' || a.id === 'starsAll';
+  });
+  eq(starAch.length, 4, '四档星级成就都在');
+  let achOk = true;
+  for (let i = 0; i < starAch.length; i++) {
+    const need = A.needOf(starAch[i]);
+    if (!(need > 0)) achOk = false;
+    if (i && need <= A.needOf(starAch[i - 1])) achOk = false;
+  }
+  ok(achOk, '星级成就门槛递增（' + starAch.map(function (a) { return A.needOf(a); }).join(' / ') + '）');
+  eq(A.needOf(starAch[3]), maxStars, '最后一档星级成就 = 满星');
+  eq(A.needOf(A.LIST.filter(function (a) { return a.id === 'allClear'; })[0]), LL.LEVELS.length,
+    '「通关全部」成就的门槛 = 关卡数');
+
+  /* 12f. 描述里带 {n} 的成就必须给得出数字，否则界面会把 {n} 当成 0 显示出去 */
+  const noNeed = [];
+  A.LIST.forEach(function (a) {
+    const d = zh['ach_' + a.id + '_d'];
+    if (d && d.indexOf('{n}') >= 0 && !(A.needOf(a) > 0)) noNeed.push(a.id);
+  });
+  eq(noNeed.length, 0, '带 {n} 的成就描述都有对应数字' +
+    (noNeed.length ? '：' + noNeed.join(' | ') : ''));
 }
 
 /* ---------- 汇总 ---------- */

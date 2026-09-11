@@ -386,10 +386,12 @@
       A.LIST.forEach(function (a) {
         const on = !!P.achievementOf(a.id);
         const row = U.el('div', 'ach-row' + (on ? ' on' : ''));
+        /* 描述里的数字由 needOf 给（星级门槛 / 通关关卡数），
+         * 这样门槛跟着关卡数走，文案只有一份 */
         row.innerHTML =
           '<img class="ach-icon" src="' + LL.Assets.path(a.icon || 'ui_medal') + '" alt="">' +
           '<div class="ach-body"><div class="ach-name">' + I18N.t('ach_' + a.id) + '</div>' +
-          '<div class="ach-desc">' + I18N.t('ach_' + a.id + '_d') + '</div></div>' +
+          '<div class="ach-desc">' + I18N.t('ach_' + a.id + '_d', { n: A.needOf(a) }) + '</div></div>' +
           '<div class="ach-coin">' + (on ? I18N.t('achGot') : '+' + a.coins) + '</div>';
         list.appendChild(row);
       });
