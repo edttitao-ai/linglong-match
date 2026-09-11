@@ -59,8 +59,12 @@ function chooseMove(b, level, rnd) {
 /* ---------- 单局模拟 ---------- */
 
 const SKILL_ARG = args.find(function (a) { return a.indexOf('--skills') === 0; });
-const SKILL_MODE = !!SKILL_ARG;                       /* --skills 或 --skills=max */
-const SKILL_MAX = SKILL_ARG === '--skills=max';       /* 上界：只放最贵的移山 */
+const SKILL_MODE = !!SKILL_ARG;                       /* --skills 或 --skills=max[:技能] */
+/* 上界模式：只刷某一种技能。默认移山（最贵最强），也可以 --skills=max:hammer
+ * 单独看某个技能的强度——「刷移山」和「刷如意锤」是两码事，得分开量。 */
+const SKILL_MAX = SKILL_ARG === '--skills=max' || (SKILL_ARG || '').indexOf('--skills=max:') === 0;
+const SKILL_MAX_ID = (SKILL_ARG || '').indexOf('--skills=max:') === 0
+  ? SKILL_ARG.slice('--skills=max:'.length) : 'cross';
 
 /* 技能的「最值钱目标格」：看它覆盖到的障碍 / 目标色 / 特殊块有多少 */
 function skillTarget(b, level, id, rnd) {
@@ -124,11 +128,22 @@ function pickSkill(b, level, st, rnd) {
   /* 盘面已无解：换天免费，白捡 */
   if (!B.hasValidMove(b)) return { id: 'swap', cell: null };
 
-  /* 上界模式：不管落后与否，够移山就砸（最坏情况，用来测难度天花板） */
+  /* 上界模式：不管落后与否，攒够就砸（最坏情况，用来测难度天花板）。
+   * 刷哪一种技能由 --skills=max:<id> 指定，默认移山。 */
   if (SKILL_MAX) {
-    if (qi < CFG.SKILLS.cross.cost) return null;
-    const cell = skillTarget(b, level, 'cross', rnd);
-    return cell ? { id: 'cross', cell: cell } : null;
+    const id = SKILL_MAX_ID;
+    const def = CFG.SKILLS[id];
+    if (!def) return null;
+    if (qi < def.cost) return null;
+    if (def.aim === 'none') return { id: id, cell: null };
+    /* 灵犀一点要一个颜色：拿本关要收集的第一个颜色 */
+    let color = -1;
+    for (let i = 0; i < level.objectives.length; i++) {
+      if (level.objectives[i].type === 'collect') { color = level.objectives[i].color; break; }
+    }
+    const cell = skillTarget(b, level, id === 'color' ? 'hammer' : id, rnd) || anyPlainCell(b, rnd);
+    if (!cell) return null;
+    return { id: id, cell: cell, color: color >= 0 ? color : 0 };
   }
 
   if (!st.behind) return null;     /* 进度不落后就不动灵力 */

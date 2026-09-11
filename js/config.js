@@ -119,7 +119,7 @@
      * 上限 180 = 存得住一次最贵的技能 + 一点零头，存不住两次。 */
     QI: {
       MAX: 240,
-      START: 90,            // 开局赠送：一进场就能放一次（便宜的两个之一）
+      START: 100,           // 开局赠送：一进场就能放一次（最便宜的三个之一，含如意锤）
       PER_TILE: 1,          // 每消除一块
       PER_CASCADE: 6,       // 连锁每多一层（第 2 层起）
       PER_OBSTACLE: 6,      // 每破一个障碍
@@ -133,16 +133,20 @@
     /* 四个局内技能：一律**不消耗步数**，代价只有灵力
      * 价格按「这一下值多少」定：换天是解围不是输出所以最便宜，
      * 移山一下清十几格还顺带破障，所以最贵。
-     * 移山定到 220 是因为它在清障关里一次能打掉整条路径上的障碍——按 160 定价时，
-     * 「无脑砸移山」仍然能把 13 个清障关推过「太简单」线。
+     *
+     * 定价的两条边界（都是量出来的）：
+     *   太高 → 玩家整局都点不出来，等于没有这个技能；
+     *   太低 → 无脑刷它就能过关（定价 25~60 时，刷移山把平均胜率推到 99.8%）。
+     * 单独刷某一种技能的实测强度（`--skills=max:<id>`）：移山 90% · 如意锤 86% · 灵犀一点 72%
+     * ——灵犀一点是情景技能（收集关/凑连锁），刷它本来就没收益，所以可以给得比另两个宽松。
      * aim：none 直接放 · cell 选一格 · color 选一格再选色
      * swap（换天）在盘面已无解时免费——不让你因为没灵力而卡死 */
     SKILLS: {
       order: ['hammer', 'swap', 'color', 'cross'],
-      hammer: { cost: 100, aim: 'cell',  icon: 'ui_skill_hammer', cause: 'skill_hammer' },
-      swap:   { cost: 70,  aim: 'none',  icon: 'ui_skill_swap',   cause: 'skill_swap', freeWhenStuck: true },
-      color:  { cost: 130, aim: 'color', icon: 'ui_skill_color',  cause: 'skill_color' },
-      cross:  { cost: 220, aim: 'cell',  icon: 'ui_skill_cross',  cause: 'skill_cross' }
+      hammer: { cost: 90,  aim: 'cell',  icon: 'ui_skill_hammer', cause: 'skill_hammer' },
+      swap:   { cost: 65,  aim: 'none',  icon: 'ui_skill_swap',   cause: 'skill_swap', freeWhenStuck: true },
+      color:  { cost: 110, aim: 'color', icon: 'ui_skill_color',  cause: 'skill_color' },
+      cross:  { cost: 180, aim: 'cell',  icon: 'ui_skill_cross',  cause: 'skill_cross' }
     },
 
     /* 绝处逢生：步数耗尽且目标未完成时，花灵力换步数——不走金币，不破铁律。
