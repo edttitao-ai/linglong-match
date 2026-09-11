@@ -14,14 +14,36 @@
 
 import math
 import os
-import random
 import struct
 import wave
 
 SR = 44100
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'sfx')
 
-random.seed(20240501)
+class Rng:
+    """素材生成专用的确定性随机源（xorshift32）。
+
+    这里刻意不使用 random 模块，也不使用密码学随机源：音效素材必须**可复现**——
+    同样的脚本与参数重跑应当得到逐字节相同的 WAV，否则仓库会不断产生无意义的二进制差异。
+    噪声只用于打击瞬态、碎屑与气息，统计特性与随机源实现无关。
+    """
+
+    def __init__(self, seed):
+        self.s = (seed & 0xFFFFFFFF) or 0x9E3779B9
+
+    def random(self):
+        s = self.s
+        s ^= (s << 13) & 0xFFFFFFFF
+        s ^= s >> 17
+        s ^= (s << 5) & 0xFFFFFFFF
+        self.s = s & 0xFFFFFFFF
+        return self.s / 4294967296.0
+
+    def uniform(self, a, b):
+        return a + (b - a) * self.random()
+
+
+rng = Rng(20240501)
 
 
 # ------------------------------------------------------------------ 工具
@@ -95,7 +117,7 @@ def bandpass_noise(dur, lo, hi, tau):
     lp = 0.0
     out = [0.0] * n
     for i in range(n):
-        x = random.uniform(-1.0, 1.0)
+        x = rng.uniform(-1.0, 1.0)
         hp = a_lo * (hp + x - x_prev)
         x_prev = x
         lp += (1.0 - a_hi) * (hp - lp)
@@ -155,15 +177,28 @@ def reverb_channel(x, rt60, damp=0.28):
     return wet
 
 
-def to_stereo(x, rt60=None, wet=0.0, spread=23, damp=0.28):
-    """干声居中；湿声左右用不同延迟起点，得到自然的宽度"""
+def to_stereo(x, rt60=None, wet=0.0, spread=23, damp=0.28, peak_db=None):
+    """干声居中；湿声左右用不同延迟起点，得到自然的宽度。
+
+    peak_db 在湿声叠加**之后**才归一化——叠混响会抬高峰值，
+    先归一化再混响会让成品电平偏离设计值。
+    """
     if not rt60 or wet <= 0:
-        return [x[:], x[:]]
-    lw = reverb_channel(x, rt60, damp)
-    rw = reverb_channel([0.0] * spread + x, rt60, damp)[:len(x)]
-    L = [x[i] + wet * lw[i] for i in range(len(x))]
-    R = [x[i] + wet * rw[i] for i in range(len(x))]
-    return [L, R]
+        chans = [x[:], x[:]]
+    else:
+        lw = reverb_channel(x, rt60, damp)
+        rw = reverb_channel([0.0] * spread + x, rt60, damp)[:len(x)]
+        L = [x[i] + wet * lw[i] for i in range(len(x))]
+        R = [x[i] + wet * rw[i] for i in range(len(x))]
+        chans = [L, R]
+    if peak_db is not None:
+        hi = max(max(abs(v) for v in chans[0]), max(abs(v) for v in chans[1]))
+        if hi > 1e-9:
+            k = db(peak_db) / hi
+            for c in chans:
+                for i in range(len(c)):
+                    c[i] *= k
+    return chans
 
 
 # ------------------------------------------------------------------ 音色
@@ -219,7 +254,7 @@ def pluck(freq, dur, decay=0.996, bright=0.5, body=0.35):
     """Karplus-Strong 拨弦 + 简易琴体共鸣"""
     n = int(SR * dur)
     N = max(2, int(round(SR / freq)))
-    buf = [random.uniform(-1.0, 1.0) * (1.0 - bright) +
+    buf = [rng.uniform(-1.0, 1.0) * (1.0 - bright) +
            (1.0 if i % 2 == 0 else -1.0) * bright for i in range(N)]
     out = [0.0] * n
     idx = 0
@@ -264,7 +299,7 @@ def gong(freq, dur, tau=0.7, shimmer=0.5):
     out = bell(freq, dur, tau, bright=1.0, detune_cents=3.5, click=0.18, partials=partials)
     n = len(out)
     if shimmer > 0:
-        noise = [random.uniform(-1.0, 1.0) for _ in range(n)]
+        noise = [rng.uniform(-1.0, 1.0) for _ in range(n)]
         noise = lowpass(noise, 900.0, 1)
         env = exp_env(n, tau * 0.6)
         for i in range(n):
@@ -283,7 +318,7 @@ def breath_tone(freq, dur, tau=0.5, vib=5.0, lp=1600.0):
         f = freq * (1.0 + 0.004 * math.sin(2.0 * math.pi * vib * t))
         phase += 2.0 * math.pi * f / SR
         out[i] = math.sin(phase) * env[i]
-    air = lowpass([random.uniform(-1.0, 1.0) for _ in range(n)], 2400.0, 1)
+    air = lowpass([rng.uniform(-1.0, 1.0) for _ in range(n)], 2400.0, 1)
     for i in range(n):
         out[i] = (out[i] + 0.18 * air[i] * env[i] ** 0.6)
     if lp:
@@ -349,13 +384,13 @@ def sfx_wind():
     for i in range(n):
         t = i / n
         lp = 0.02 + 0.30 * t * t
-        x = random.uniform(-1.0, 1.0)
+        x = rng.uniform(-1.0, 1.0)
         y += lp * (x - y)
         env = math.sin(math.pi * min(1.0, t * 1.05)) ** 1.5
         out[i] = (y + (x - y) * 0.5 * t) * env
     mix_at(out, wood_tick(620.0, 0.09, 0.012), 0.30, 0.22)
     out = to_peak(fade(out, 3.0, 60.0), -8.0)
-    return to_stereo(out, rt60=0.5, wet=0.18)
+    return to_stereo(out, rt60=0.5, wet=0.18, peak_db=-8.0)
 
 
 def sfx_thunder():
@@ -371,9 +406,9 @@ def sfx_thunder():
         phase += 2.0 * math.pi * f / SR
         thud[i] = math.sin(phase) * math.exp(-i / (0.15 * SR))
     mix_at(out, thud, 0.0, 1.0)
-    mix_at(out, lowpass([random.uniform(-1.0, 1.0) for _ in range(int(SR * 0.75))], 260.0, 1), 0.02, 0.5)
+    mix_at(out, lowpass([rng.uniform(-1.0, 1.0) for _ in range(int(SR * 0.75))], 260.0, 1), 0.02, 0.5)
     out = to_peak(fade(out, 1.0, 60.0), -4.0)
-    return to_stereo(out, rt60=0.9, wet=0.22)
+    return to_stereo(out, rt60=0.9, wet=0.22, peak_db=-4.0)
 
 
 def sfx_taiji():
@@ -383,7 +418,7 @@ def sfx_taiji():
     mix_at(out, bell(2093.0, 0.7, tau=0.14, click=0.2), 0.05, 0.18)
     mix_at(out, bandpass_noise(0.5, 2500, 8000, 0.10), 0.04, 0.18)
     out = to_peak(fade(out, 2.0, 90.0), -3.0)
-    return to_stereo(out, rt60=1.2, wet=0.30, spread=31)
+    return to_stereo(out, rt60=1.2, wet=0.30, spread=31, peak_db=-3.0)
 
 
 def sfx_break():
@@ -393,7 +428,7 @@ def sfx_break():
     mix_at(out, wood_tick(320.0, 0.22, 0.045, lp=1200.0, click=0.25), 0.0, 0.35)
     for i in range(5):
         mix_at(out, bandpass_noise(0.05, 1500, 6000, 0.010),
-               0.05 + random.uniform(0, 0.24), 0.24 * random.uniform(0.5, 1.0))
+               0.05 + rng.uniform(0, 0.24), 0.24 * rng.uniform(0.5, 1.0))
     out = to_peak(fade(out, 1.0, 40.0), -8.0)
     return [out]
 
@@ -402,9 +437,9 @@ def sfx_shuffle():
     """洗牌：一串竹简摩擦"""
     out = zeros(0.62)
     for i in range(7):
-        at = i * 0.072 + random.uniform(-0.012, 0.012)
+        at = i * 0.072 + rng.uniform(-0.012, 0.012)
         mix_at(out, bandpass_noise(0.07, 1200, 5000, 0.018), max(0.0, at), 0.42)
-        mix_at(out, wood_tick(random.uniform(520, 900), 0.05, 0.009, click=0.3), max(0.0, at), 0.30)
+        mix_at(out, wood_tick(rng.uniform(520, 900), 0.05, 0.009, click=0.3), max(0.0, at), 0.30)
     return [to_peak(fade(out, 1.5, 40.0), -10.0)]
 
 
@@ -419,7 +454,7 @@ def sfx_win():
         mix_at(out, pluck(f, 2.0, decay=0.9972, body=0.45), chord_at, g * 0.8)
     mix_at(out, bell(1760.0, 1.2, tau=0.22, click=0.25), chord_at, 0.22)
     out = to_peak(fade(out, 2.0, 90.0), -3.0)
-    return to_stereo(out, rt60=1.2, wet=0.30, spread=27)
+    return to_stereo(out, rt60=1.2, wet=0.30, spread=27, peak_db=-3.0)
 
 
 def sfx_lose():
@@ -428,9 +463,9 @@ def sfx_lose():
     seq = [(220.00, 0.0), (185.00, 0.30), (146.83, 0.60)]
     for f, at in seq:
         mix_at(out, breath_tone(f, 1.0, tau=0.42, lp=1600.0), at, 0.95)
-    mix_at(out, lowpass([random.uniform(-1.0, 1.0) for _ in range(int(SR * 1.4))], 200.0, 1), 0.0, 0.35)
+    mix_at(out, lowpass([rng.uniform(-1.0, 1.0) for _ in range(int(SR * 1.4))], 200.0, 1), 0.0, 0.35)
     out = to_peak(fade(out, 6.0, 90.0), -6.0)
-    return to_stereo(out, rt60=0.7, wet=0.14, spread=19)
+    return to_stereo(out, rt60=0.7, wet=0.14, spread=19, peak_db=-6.0)
 
 
 # ------------------------------------------------------------------ 输出

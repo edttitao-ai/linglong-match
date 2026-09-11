@@ -4,6 +4,7 @@
 [![deps](https://img.shields.io/badge/dependencies-zero-blue)](#-技术实现)
 [![levels](https://img.shields.io/badge/levels-30-orange)](#-关卡设计)
 [![i18n](https://img.shields.io/badge/i18n-中文_/_English-orange)](./lang)
+[![license](https://img.shields.io/badge/license-MIT-lightgrey)](#-license)
 
 > 纯原生 Canvas 打造的国风三消。**零依赖、零构建、零外部素材包 —— 双击 `index.html` 即玩，完全离线。**
 
@@ -175,6 +176,8 @@ python tools/gen_sfx.py                 # 重新合成全部 WAV 音效
 - **峰值电平分开设定**：消除 −6 / UI −12~−13 / 无效 −14 / 胜利 −3 dBFS，写文件前再做一次真峰值保护（≤ −1 dBFS）。
 - **声道**：消除与 UI 单声道（连锁时会同时叠 4–6 个，立体声会互相抵消相位），
   折扇、惊雷、太极、胜负这类氛围音用立体声（左右混响起点错开）。
+- **可复现**：生成器使用脚本内置的确定性随机源（xorshift32）而非 `random` 模块或用系统熵——
+  同样的参数重跑必然得到逐字节相同的 WAV（已实测校验），仓库不会因为重新生成而出现无意义的二进制差异。
 
 ## 📦 素材
 
@@ -209,4 +212,8 @@ python tools/gen_sfx.py                 # 重新合成全部 WAV 音效
 
 ---
 
-素材与代码均为本项目自产；如需开源发布，请自行补充 LICENSE 文件。
+## License
+
+[MIT](./LICENSE) © 2026 Linglong Match contributors
+
+素材与代码均为本项目自产：SVG 精灵与 WAV 音效由仓库内的脚本生成，不含任何第三方素材。
