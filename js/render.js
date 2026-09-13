@@ -332,26 +332,24 @@
     drawBadge(ctx, tile, size) {
       const map = { 1: 'sp_wind_h', 2: 'sp_wind_v', 3: 'sp_thunder', 4: 'sp_taiji' };
       const img = A.img(map[tile.s]);
-      const bs = size * (tile.s === S.TAIJI ? 0.92 : 0.62);
-      const info = tile.t >= 0 ? CFG.TILE_INFO[tile.t] : null;
+      /* 符咒只占中间一小块。素材是**没有底盘、没有外框的纯图形**——
+       * 方块本体决定这枚符咒能和谁配对，必须完整露出来。
+       * （早先用的是"带深色底盘的一整张卡"、铺到 0.72 格，正好把方块颜色盖住，
+       *   玩家看不出符咒是什么色，等于没法玩；补一圈颜色方框也不对，那是硬加的装饰。） */
+      const bs = size * (tile.s === S.TAIJI ? 0.70 : 0.62);
 
-      /* 颜色底环：符咒的素材是"带深色底盘的一整张卡"，铺满格子就把方块的颜色盖住了——
-       * 而符咒照样要按颜色配对，看不出颜色就没法玩。所以在符咒底下压一圈方块本色的环，
-       * 环比符咒大一圈，颜色就一直在。太极是无色块，没有颜色可露，不画。 */
-      if (info && tile.s !== S.TAIJI) {
-        const rr = size * 0.40;
-        ctx.save();
-        ctx.strokeStyle = info.main;
-        ctx.lineWidth = Math.max(3, size * 0.13);
-        this.roundRect(ctx, -rr, -rr, rr * 2, rr * 2, rr * 0.6);
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(5,7,13,0.5)';
-        ctx.lineWidth = Math.max(1, size * 0.022);
-        const rr2 = rr + size * 0.085;
-        this.roundRect(ctx, -rr2, -rr2, rr2 * 2, rr2 * 2, rr2 * 0.6);
-        ctx.stroke();
-        ctx.restore();
-      }
+      /* 图形下垫一层很淡的暗色柔光：紫色闪电、太极的白鱼在浅色方块上会糊掉。
+       * 边缘完全化开、不形成轮廓，所以它读起来是"影子"而不是"底盘"。 */
+      const g = ctx.createRadialGradient(0, 0, size * 0.04, 0, 0, size * 0.44);
+      g.addColorStop(0, 'rgba(5,7,13,0.52)');
+      g.addColorStop(0.6, 'rgba(5,7,13,0.2)');
+      g.addColorStop(1, 'rgba(5,7,13,0)');
+      ctx.save();
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.44, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
 
       ctx.save();
       if (tile.s === S.TAIJI) {
@@ -434,14 +432,16 @@
             /* 掉了 1 层：闪一下 */
             alpha = 1 - 0.35 * Math.sin(p * Math.PI);
           }
-          /* 覆盖层素材：霜与藤蔓本身是空心的环，铺满格子即可；
-           * 石锁是实心锁体，缩到 0.8 格，让底下方块的颜色还能从四周看出来——
-           * 石锁底下的块照样要参与配对，颜色看不见就没法玩了。 */
+          /* 覆盖层素材：三种障碍都尽量"别压住方块本体"——
+           * 方块的颜色和图形是配对依据，被盖住就看不出这格是什么。
+           *   霜：缩到 0.95 并降到 0.7 不透明度，像一层薄冰蒙在格子上；
+           *   藤蔓：放大到 1.08，藤环挪到格子边缘，方块中间的图形完整露着；
+           *   石锁：缩到 0.66，锁体只占中间，方块四周的颜色看得到。 */
           const imgKey = kind === O.FROST ? 'ob_frost'
             : (kind === O.STONE ? (hp === 1 ? 'ob_stone_2' : 'ob_stone') : 'ob_vine');
           const img = A.img(imgKey);
-          const cover = kind === O.STONE ? 0.8 : 1.0;
-          const baseAlpha = kind === O.FROST ? 0.92 : 1;
+          const cover = kind === O.STONE ? 0.66 : (kind === O.FROST ? 0.95 : 1.08);
+          const baseAlpha = kind === O.FROST ? 0.7 : 1;
           ctx.save();
           ctx.globalAlpha = Math.max(0, Math.min(1, alpha * baseAlpha));
           ctx.translate(rc.x + rc.w / 2, rc.y + rc.h / 2);
