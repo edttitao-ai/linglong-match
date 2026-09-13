@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>玲珑消 · 特效预览（直接跑 js/fx.js）</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#05070D; }
+  canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1180"></canvas>
+<script src="../js/config.js"></script>
+<script src="../js/fx.js"></script>
+<script>
+/* 特效预览：直接调用 js/fx.js 里真实的绘制函数，按 0→1 的进度各画五帧。
+ * 不经过对局主循环，所以是确定性的——改完特效跑一次就知道有没有画坏，
+ * 也免得靠"截图撞时机"去验（浏览器里等 300ms 截到哪一帧全看运气）。
+ *
+ *   python tools/serve.py 或者直接双击打开都行（只用 <img> 加载素材，兼容 file://）
+ */
+'use strict';
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+
+const TILE_KEYS = ['tile_jade', 'tile_lantern', 'tile_coin', 'tile_fan', 'tile_lotus', 'tile_sachet'];
+const IMGS = {};
+let pending = TILE_KEYS.length + 1;
+function done() { if (--pending === 0) draw(); }
+TILE_KEYS.concat(['ui_skill_hammer']).forEach(function (k) {
+  const im = new Image();
+  im.onload = im.onerror = done;
+  im.src = '../assets/img/' + k + '.png';
+  IMGS[k] = im;
+});
+/* fx.js 只在如意锤里取技能图标；这里给个最小的 Assets 替身就够 */
+LL.Assets = { img: function (k) { return IMGS[k]; } };
+
+const GOLD_PALE = '#F0DFAE';
+function rnd(seed) { const x = Math.sin(seed * 127.1) * 43758.5453; return x - Math.floor(x); }
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function miniBoard(bx, by, cell) {
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const x = bx + c * cell, y = by + r * cell;
+      ctx.fillStyle = '#151D30';
+      ctx.strokeStyle = 'rgba(201,164,76,.18)'; ctx.lineWidth = 1;
+      roundRect(x + 3, y + 3, cell - 6, cell - 6, cell * 0.18); ctx.fill(); ctx.stroke();
+      const im = IMGS[TILE_KEYS[(r * 3 + c) % TILE_KEYS.length]];
+      if (im && im.width) ctx.drawImage(im, x + cell * 0.07, y + cell * 0.07, cell * 0.86, cell * 0.86);
+    }
+  }
+}
+
+const F = 168, GAP = 10, LEFT = 214, TOP = 92, ROWH = 136;
+const STEPS = [0.08, 0.32, 0.5, 0.72, 0.96];
+const CAPS = ['起手', '命中', '扩散', '收束', '净'];
+const ROWS = [
+  ['hammer', '如意锤', '0.60s · 震屏 6px'],
+  ['cross', '移山', '0.72s · 震屏 10px'],
+  ['color', '灵犀一点', '0.54s · 不震屏'],
+  ['swap', '换天', '0.86s · 不震屏'],
+  ['wind', '风符', '0.46s · 震屏 3px'],
+  ['thunder', '惊雷', '0.62s · 震屏 14px'],
+  ['taiji', '太极', '1.00s · 震屏 8px'],
+  ['seal', '连锁金印', '0.62s']
+];
+
+function draw() {
+  ctx.fillStyle = '#05070D'; ctx.fillRect(0, 0, C.width, C.height);
+  const g = ctx.createRadialGradient(540, 0, 40, 540, 0, 900);
+  g.addColorStop(0, 'rgba(44,60,98,.5)'); g.addColorStop(1, 'rgba(44,60,98,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, C.width, 420);
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = GOLD_PALE; ctx.font = '26px KaiTi,"STKaiti",serif';
+  ctx.fillText('特效预览 · 直接调用 js/fx.js', 36, 44);
+  ctx.fillStyle = 'rgba(240,223,174,.6)'; ctx.font = '12px "Microsoft YaHei",sans-serif';
+  ctx.fillText('每行五帧 = 同一个特效的进度切片；这张图是把真实模块跑一遍的结果，不是设计稿。', 36, 66);
+
+  ROWS.forEach(function (row, i) {
+    const y = TOP + i * ROWH;
+    const cell = 46, bw = cell * 3, bh = cell * 3;
+    ctx.fillStyle = GOLD_PALE; ctx.font = '17px KaiTi,"STKaiti",serif';
+    ctx.fillText(row[1], 36, y + 52);
+    ctx.fillStyle = 'rgba(201,164,76,.75)'; ctx.font = '11.5px "Microsoft YaHei",sans-serif';
+    ctx.fillText(row[2], 36, y + 74);
+
+    for (let f = 0; f < 5; f++) {
+      const x = LEFT + f * (F + GAP);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x - 2, y - 2, F + 4, F + 4); ctx.clip();
+      ctx.fillStyle = '#0B1120'; ctx.fillRect(x - 2, y - 2, F + 4, F + 4);
+      const bx = x + (F - bw) / 2, by = y + (F - bh) / 2;
+      const cx = bx + bw / 2, cy = by + bh / 2;
+      if (row[0] !== 'swap') miniBoard(bx, by, cell);
+      const o = { x: cx, y: cy, cell: cell, bx: bx, by: by, w: bw, h: bh,
+                  color: '#E28BA8', label: '连锁 ×3',
+                  cells: (function () {
+                    const out = [];
+                    for (let c = 0; c < 3; c++) if (c !== 1) out.push({ x: bx + (c + 0.5) * cell, y: cy });
+                    for (let r = 0; r < 3; r++) if (r !== 1) out.push({ x: cx, y: by + (r + 0.5) * cell });
+                    return out;
+                  })() };
+      if (row[0] === 'swap') { ctx.fillStyle = '#0B1120'; ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4); }
+      LL.FX.drawKind(ctx, row[0], STEPS[f], o);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(201,164,76,.22)'; ctx.lineWidth = 1;
+      ctx.strokeRect(x - 1.5, y - 1.5, F + 3, F + 3);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(240,223,174,.5)'; ctx.font = '11px "Microsoft YaHei",sans-serif';
+      ctx.fillText(CAPS[f], x + F / 2, y + F + 15);
+      ctx.textAlign = 'left';
+    }
+  });
+  ctx.fillStyle = 'rgba(240,223,174,.5)'; ctx.font = '11.5px "Microsoft YaHei",sans-serif';
+  ctx.fillText('换天那行故意不铺底方块：它演的是"整盘化墨 → 墨流 → 金环"，底下的方块由对局渲染负责。', 36, 1150);
+}
+</script>
+</body>
+</html>

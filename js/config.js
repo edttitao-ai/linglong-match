@@ -62,6 +62,19 @@
     },
     CASCADE_SPEEDUP: 0.9,   // 每层连锁动画提速
     MIN_TIME_SCALE: 0.6,
+
+    /* 技能与特殊块的演出特效（数值就是方案图上标的那套）
+     *   dur   演出总时长（毫秒）
+     *   shake 震屏强度，1.0 ≈ 22px 位移
+     *   flash 全屏闪白
+     * 打击类走"白闪 + 冲击环 + 震屏"，变化类（换天 / 灵犀 / 太极）只走"墨影 + 金环"、震屏为 0：
+     * 两者节奏混在一起会让连放技能的画面发晕。 */
+    FX: {
+      dur: { hammer: 620, swap: 860, color: 540, cross: 720, wind: 460, thunder: 620, taiji: 1000, seal: 620 },
+      shake: { hammer: 0.27, swap: 0, color: 0, cross: 0.45, wind: 0.14, thunder: 0.64, taiji: 0.36, seal: 0.12 },
+      flash: { hammer: 0.2, swap: 0, color: 0.1, cross: 0.34, wind: 0, thunder: 0.22, taiji: 0.32, seal: 0 }
+    },
+
     HINT_DELAY: 5200,       // 空闲多久给出提示（高亮最优的一步）
     HINT_TIP_DELAY: 6500,   // 再等这么久还没动手，就补一句「为什么推荐它」
     HINT_TIP_EVERY: 7000,   // 之后每隔这么久重复一次，别让那句话永久消失

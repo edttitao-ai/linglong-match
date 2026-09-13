@@ -367,40 +367,33 @@
       LL.UI.updateQi(res.gained, res.score);
     },
 
-    /* 技能起手特效：技能要有分量，所以起手就是大动静 */
+    /* 技能起手特效：按 fx.js 的分阶段演出播一遍。
+     * 震屏与闪白由 FX.spawn 按 CFG.FX 表带出来，这里不再自己 addShake——
+     * 两处都加会震过头，而且"哪个技能该震、震多少"会散在两个文件里。 */
     skillFx(id, cell, color) {
-      const Anim = LL.Anim, Render = LL.Render;
+      const Anim = LL.Anim, Render = LL.Render, FX = LL.FX, g = Render.geom;
       const p = cell
         ? Render.cellXY(cell.r, cell.c)
-        : { x: Render.W / 2, y: Render.geom.by + Render.geom.board / 2 };
-      const cx = Render.W / 2, cy = Render.geom.by + Render.geom.board * 0.42;
+        : { x: Render.W / 2, y: g.by + g.board / 2 };
+      const info = CFG.TILE_INFO[color] || CFG.TILE_INFO[0];
 
       if (id === 'hammer') {
-        Anim.burst(p.x, p.y, { count: 16, colors: ['#fff3c4', '#ffd27a', '#ffffff'], shape: 'spark', speedMax: 360 });
-        Anim.burst(p.x, p.y, { count: 8, colors: ['#ffffff', '#d8e6ee'], shape: 'shard', speedMax: 210 });
-        Anim.addShake(0.45);
-        Anim.addFlash(0.2);
-      } else if (id === 'cross') {
-        Anim.lineFx({ x: Render.geom.bx, y: p.y },
-          { x: Render.geom.bx + Render.geom.board, y: p.y }, { color: 'rgba(255,242,206,0.95)', width: 20 });
-        Anim.lineFx({ x: p.x, y: Render.geom.by },
-          { x: p.x, y: Render.geom.by + Render.geom.board }, { color: 'rgba(255,242,206,0.95)', width: 20 });
-        Anim.burst(p.x, p.y, { count: 22, colors: ['#fff3c4', '#ffb45e', '#ffffff'], shape: 'spark', speedMax: 430 });
-        Anim.addShake(0.72);
-        Anim.addFlash(0.34);
+        FX.spawn('hammer', { x: p.x, y: p.y, cell: g.cell });
+      } else if (id === 'cross' && cell) {
+        /* 十字要碎的是整行整列（移山清的就是这两条），把落点算好交给特效层 */
+        const cells = [];
+        for (let c = 0; c < CFG.COLS; c++) if (c !== cell.c) cells.push(Render.cellXY(cell.r, c));
+        for (let r = 0; r < CFG.ROWS; r++) if (r !== cell.r) cells.push(Render.cellXY(r, cell.c));
+        FX.spawn('cross', { x: p.x, y: p.y, cell: g.cell, bx: g.bx, by: g.by,
+                            w: g.board, h: g.board, cells: cells });
       } else if (id === 'color') {
-        const info = CFG.TILE_INFO[color] || CFG.TILE_INFO[0];
-        Anim.burst(p.x, p.y, { count: 14, colors: [info.light, info.main, '#ffffff'], shape: 'ring', speedMax: 90 });
-        Anim.burst(p.x, p.y, { count: 16, colors: [info.light, '#ffffff'], shape: 'spark', speedMax: 300 });
-        Anim.addShake(0.18);
-        Anim.addFlash(0.14);
+        FX.spawn('color', { x: p.x, y: p.y, cell: g.cell, color: info.main });
       } else if (id === 'swap') {
-        Anim.burst(cx, cy, { count: 24, colors: ['#fff3c4', '#9fd8ff', '#ffffff'], shape: 'spark', speedMax: 380 });
-        Anim.burst(cx, cy, { count: 10, colors: ['#ffffff', '#e8dcff'], shape: 'ring', speedMax: 120 });
-        Anim.addShake(0.42);
-        Anim.addFlash(0.22);
+        FX.spawn('swap', { x: g.bx, y: g.by, w: g.board, h: g.board, cell: g.cell });
       }
-      Anim.text(cx, cy - 30, I18N.t('skill_' + id), { size: 34, color: '#8a3a1c', life: 980, stroke: '#fff8e6' });
+      /* 技能名挪到棋盘上沿：起手特效现在铺满目标格，字压在上面看不清 */
+      Anim.text(Render.W / 2, g.by + 34, I18N.t('skill_' + id),
+        { size: 30, color: '#F0DFAE', life: 980, stroke: 'rgba(5,7,13,0.8)' });
     },
 
     /* 技能栏第一次出现时教一次。
@@ -534,7 +527,7 @@
 
     /* 特效与音效编排 */
     spawnClearEffects(ev) {
-      const Anim = LL.Anim, Audio = LL.Audio, Render = LL.Render;
+      const Anim = LL.Anim, Audio = LL.Audio, Render = LL.Render, FX = LL.FX;
       let cx = 0, cy = 0;
       for (let i = 0; i < ev.cells.length; i++) {
         const p = Render.cellXY(ev.cells[i].r, ev.cells[i].c);
@@ -547,6 +540,11 @@
             colors: [info.main, info.light],
             lifeMin: 260, lifeMax: 620,
             sizeMin: 4, sizeMax: 11
+          });
+          /* 每块再带一颗金屑上浮：只碎不亮的话，深色盘面上会显得"塌下去" */
+          Anim.burst(p.x, p.y, {
+            count: 1, colors: ['#F0DFAE', '#E8C877'],
+            lift: 70, g: 40, lifeMin: 420, lifeMax: 780, sizeMin: 2, sizeMax: 5
           });
         }
       }
@@ -566,27 +564,24 @@
         }
       }
 
-      /* 特殊块引爆 */
+      /* 特殊块引爆：走 fx.js 的分阶段演出（风头推进 / 落雷 / 法阵），
+       * 震屏与闪白同样由 CFG.FX 表统一给，这里只负责起特效与音效 */
       const seen = {};
       for (let i = 0; i < ev.fires.length; i++) {
         const f = ev.fires[i];
         const p = Render.cellXY(f.r, f.c);
-        if (f.s === S.WIND_H) {
-          Anim.lineFx({ x: Render.geom.bx, y: p.y }, { x: Render.geom.bx + Render.geom.board, y: p.y }, { color: 'rgba(255,246,214,0.95)' });
-          Anim.burst(p.x, p.y, { count: 8, colors: ['#fff3c4', '#9fd8ff'], shape: 'spark', speedMax: 260 });
-          if (!seen.wind) { Audio.play('wind'); seen.wind = 1; Anim.addShake(0.22); }
-        } else if (f.s === S.WIND_V) {
-          Anim.lineFx({ x: p.x, y: Render.geom.by }, { x: p.x, y: Render.geom.by + Render.geom.board }, { color: 'rgba(255,246,214,0.95)' });
-          Anim.burst(p.x, p.y, { count: 8, colors: ['#fff3c4', '#9fd8ff'], shape: 'spark', speedMax: 260 });
-          if (!seen.wind) { Audio.play('wind'); seen.wind = 1; Anim.addShake(0.22); }
+        const base = { x: p.x, y: p.y, cell: Render.geom.cell,
+                       bx: Render.geom.bx, by: Render.geom.by, w: Render.geom.board, h: Render.geom.board };
+        if (f.s === S.WIND_H || f.s === S.WIND_V) {
+          const vertical = f.s === S.WIND_V;
+          FX.spawn('wind', Object.assign({}, base, { vertical: vertical }));
+          if (!seen.wind) { Audio.play('wind'); seen.wind = 1; }
         } else if (f.s === S.THUNDER) {
-          Anim.burst(p.x, p.y, { count: 10, colors: ['#fff6d0', '#ffd27a'], shape: 'ring', speedMax: 60 });
-          Anim.burst(p.x, p.y, { count: 14, colors: ['#fff3c4', '#ffb45e'], shape: 'spark', speedMax: 330 });
-          if (!seen.thunder) { Audio.play('thunder'); seen.thunder = 1; Anim.addShake(0.5); Anim.addFlash(0.22); }
+          FX.spawn('thunder', base);
+          if (!seen.thunder) { Audio.play('thunder'); seen.thunder = 1; }
         } else if (f.s === S.TAIJI) {
-          Anim.burst(p.x, p.y, { count: 12, colors: ['#e8dcff', '#ffffff', '#8f7ad6'], shape: 'ring', speedMax: 80 });
-          Anim.burst(p.x, p.y, { count: 18, colors: ['#efe6ff', '#c9b6ff', '#ffffff'], shape: 'spark', speedMax: 380 });
-          if (!seen.taiji) { Audio.play('taiji'); seen.taiji = 1; Anim.addShake(0.6); Anim.addFlash(0.34); }
+          FX.spawn('taiji', base);
+          if (!seen.taiji) { Audio.play('taiji'); seen.taiji = 1; }
         }
       }
 
@@ -595,8 +590,10 @@
         Anim.text(cx, cy, '+' + U.fmt(ev.score), { size: 24, color: '#8a4a1c', life: 880 });
       }
       if (ev.cascade >= 2) {
-        Anim.text(Render.W / 2, Render.geom.by + Render.geom.board * 0.42,
-          I18N.t('cascade', { n: ev.cascade }), { banner: true, size: 46, life: 900 });
+        /* 连锁不再用横幅文字，改成朱砂金印砸下来（方案图里的"连锁金印"）。
+         * 文案从 I18N 传进去，别在特效层写死中文——英文界面会露馅。 */
+        FX.spawn('seal', { x: Render.W / 2, y: Render.geom.by + Render.geom.board * 0.30,
+                           cell: Render.geom.cell, label: I18N.t('cascade', { n: ev.cascade }) });
         Anim.addShake(0.12 + Math.min(0.25, ev.cascade * 0.05));
       }
       if (ev.cause === 'match') Audio.playCascade(ev.cascade);
@@ -881,6 +878,7 @@
       LL.Render.tickFps(dt);
       if (this.state === 'paused') return;
       LL.Anim.update(dt);
+      LL.FX.update(dt);
 
       if (this.state === 'intro') {
         this.introT -= dt;

@@ -129,6 +129,7 @@
 
       this.drawObstacles(ctx, view.board, cur, p);
       this.drawHints(ctx, view, cur);
+      if (LL.FX) LL.FX.draw(ctx);
       this.drawParticles(ctx);
       this.drawTexts(ctx);
       ctx.restore();
@@ -645,13 +646,14 @@
         ctx.scale(scale, scale);
         ctx.font = t.weight + ' ' + size + 'px ' + FONT;
         ctx.lineWidth = Math.max(3, size * 0.16);
-        ctx.strokeStyle = t.stroke;
+        ctx.strokeStyle = t.banner ? 'rgba(5,7,13,0.72)' : t.stroke;
         ctx.lineJoin = 'round';
         ctx.strokeText(t.str, 0, 0);
         if (t.banner) {
           const grd = ctx.createLinearGradient(0, -size * 0.7, 0, size * 0.7);
-          grd.addColorStop(0, '#b8342c');
-          grd.addColorStop(1, '#7a4a1f');
+          /* 深底上横幅要"金字压深边"：原来那套朱砂→棕的填充只在浅色纸上读得出来 */
+          grd.addColorStop(0, '#F6E7B4');
+          grd.addColorStop(1, '#C9A44C');
           ctx.fillStyle = grd;
         } else {
           ctx.fillStyle = t.color;

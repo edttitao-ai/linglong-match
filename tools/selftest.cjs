@@ -23,7 +23,7 @@ const path = require('path');
 ['util.js', 'config.js', 'board.js', 'special.js', 'resolver.js', 'skills.js', 'hint.js', 'skilldemo.js', 'levels.js',
   '../lang/zh.js', '../lang/en.js',
   'i18n.js', 'progress.js', 'quests.js', 'daily.js', 'modes.js', 'achievements.js',
-  'anim.js', 'assets.js', 'audio.js', 'render.js', 'hud.js', 'input.js', 'game.js', 'ui.js'].forEach(function (f) {
+  'anim.js', 'fx.js', 'assets.js', 'audio.js', 'render.js', 'hud.js', 'input.js', 'game.js', 'ui.js'].forEach(function (f) {
   require(path.join(__dirname, '..', 'js', f));
 });
 /* 说明：上面这些文件在 Node 下只会定义对象，不会碰 DOM（DOM 访问都在函数体内），
@@ -519,6 +519,7 @@ section('8. 模块 API 完整性（源码引用的方法必须存在）');
     Resolver: ['create', 'beginTurn', 'beginSkill', 'beginScan', 'step', 'runTurn', 'shuffle'],
     Skills: ['def', 'order', 'qiStartFor', 'qiScaleFor', 'gainMult', 'gain', 'addQi', 'isFull',
       'cost', 'canUse', 'validTarget', 'planHammer', 'planCross', 'recolor', 'plan', 'lastStandOffer'],
+    FX: ['spawn', 'update', 'draw', 'drawKind', 'clear'],
     SkillDemo: ['open', 'show', 'close', 'current', 'isRunning', 'resize'],
     Daily: ['build', 'hash', 'buildLayout'],
     Quests: ['generate', 'reroll', 'describe', 'progressText', 'apply'],
