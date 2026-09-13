@@ -264,7 +264,6 @@
 
   function drawHammer(dt) {
     const p = cellXY(scene.target.r, scene.target.c);
-    const aim = U.clamp(t / 0.75, 0, 1);
     const hit = U.clamp((t - 0.75) / 0.2, 0, 1);
 
     drawBoardBase(dt);
@@ -273,27 +272,11 @@
       drawLock(p.x, p.y, p.s, 1);
       highlight(scene.target.r, scene.target.c, 0.4 + 0.6 * Math.sin(t * 12), 'rgba(217,72,60,0.95)');
     }
-    /* 锤子落下 */
-    if (t < 1.05) {
-      const drop = (1 - U.easeOutCubic(aim)) * p.s * 1.5;
-      drawIcon('ui_skill_hammer', p.x, p.y - p.s * 1.1 - drop, p.s * 1.5, 1 - hit * 0.5, -0.28);
-    }
-    /* 命中：破障 + 清格 */
-    if (hit > 0) {
-      if (hit < 0.55) {
-        drawLock(p.x, p.y, p.s * (1 + hit * 0.55), 1 - hit * 1.8);
-        ctx.save();
-        ctx.globalAlpha = (1 - hit / 0.55) * 0.85;
-        ctx.fillStyle = '#FFF6D0';
-        roundRect(p.x - p.s * 0.5, p.y - p.s * 0.5, p.s, p.s, p.s * 0.2);
-        ctx.fill();
-        ctx.restore();
-      }
-      if (hit < 0.12 && particles.length < 4) {
-        burst(p.x, p.y, 16, ['#fff3c4', '#ffd27a', '#cfd6dc', '#ffffff'], 150);
-      }
-    }
+    if (hit > 0 && hit < 0.55) drawLock(p.x, p.y, p.s * (1 + hit * 0.55), 1 - hit * 1.8);
     if (hit > 0.35) drawFalling(dt);
+    /* 锤影落下 / 白闪裂纹 / 冲击环 + 石屑都交给对局那套特效画——
+     * 演示要让人看到"放技能时屏幕上会发生什么"，两边各画一套迟早会走样 */
+    LL.FX.drawKind(ctx, 'hammer', fxPhase(0.75), { x: p.x, y: p.y, cell: p.s });
     tickParticles(dt);
     drawParticles();
   }
@@ -319,34 +302,47 @@
         }
       }
     }
-    if (hit > 0 && hit < 0.5) {
-      ctx.save();
-      ctx.globalAlpha = 1 - hit / 0.5;
-      const lw = Math.max(4, p0().s * 0.5);
-      const gx = cellXY(T.r, 0), gy = cellXY(0, T.c);
-      const grad = ctx.createLinearGradient(0, gy.y, W, gy.y);
-      grad.addColorStop(0, 'rgba(255,246,214,0)');
-      grad.addColorStop(0.5, 'rgba(255,246,214,0.95)');
-      grad.addColorStop(1, 'rgba(255,246,214,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, gy.y - lw / 2, W, lw);
-      const grad2 = ctx.createLinearGradient(gx.x, 0, gx.x, H);
-      grad2.addColorStop(0, 'rgba(255,246,214,0)');
-      grad2.addColorStop(0.5, 'rgba(255,246,214,0.95)');
-      grad2.addColorStop(1, 'rgba(255,246,214,0)');
-      ctx.fillStyle = grad2;
-      ctx.fillRect(gx.x - lw / 2, 0, lw, H);
-      ctx.restore();
-      if (particles.length < 4) {
-        for (let c = 0; c < COLS; c++) { const q = cellXY(T.r, c); burst(q.x, q.y, 3, ['#fff3c4', '#ffd27a'], 120); }
-        for (let r = 0; r < ROWS; r++) { const q = cellXY(r, T.c); burst(q.x, q.y, 3, ['#fff3c4', '#ffd27a'], 120); }
-      }
+    if (hit > 0) {
+      /* 两条光带由 fx.js 的移山来画；这里只留"逐格点亮"的扫光，那是讲清范围的关键 */
+      LL.FX.drawKind(ctx, 'cross', fxPhase(0.85), boardRect({
+        x: cellXY(T.r, T.c).x, y: cellXY(T.r, T.c).y, cell: p0().s,
+        cells: (function () {
+          const out = [];
+          for (let c = 0; c < COLS; c++) if (c !== T.c) { const q = cellXY(T.r, c); out.push({ x: q.x, y: q.y }); }
+          for (let r = 0; r < ROWS; r++) if (r !== T.r) { const q = cellXY(r, T.c); out.push({ x: q.x, y: q.y }); }
+          return out;
+        })()
+      }));
     }
     if (hit > 0.3) drawFalling(dt);
     tickParticles(dt);
     drawParticles();
   }
   function p0() { return cellXY(0, 0); }
+
+  /* 演示的时间轴（秒）→ 特效进度：让特效的命中帧（p=0.3）正落在演示的动作时刻，
+   * 之后按 0.7/s 收尾，两边的节奏才对得上 */
+  function fxPhase(hitT) {
+    if (t < hitT) return U.clamp((t / hitT) * 0.3, 0, 1);
+    return U.clamp(0.3 + (t - hitT) * 0.7, 0, 1);
+  }
+
+  /* 迷你棋盘的外框（fx.js 的横竖光带要按棋盘尺寸走） */
+  function boardRect(o) {
+    const s0 = p0();
+    o.bx = s0.x - s0.s / 2;
+    o.by = s0.y - s0.s / 2;
+    o.w = s0.s * COLS;
+    o.h = s0.s * ROWS;
+    return o;
+  }
+
+  /* 只取特效的后半段：演示里的"选色飞入""整盘飞位"本身就是教学内容，
+   * 让特效前段（飞入的光点、化墨的黑罩）盖上去，反而把要讲的东西遮了 */
+  function fxTail(kind, from, hitT, o) {
+    const p = fxPhase(hitT);
+    if (p >= from) LL.FX.drawKind(ctx, kind, p, o);
+  }
 
   function drawColor(dt) {
     const T = scene.target;
@@ -406,6 +402,10 @@
       }
     }
     if (match > 0.4) drawFalling(dt);
+    /* 定色那一下的彩墨绽开与金环来自对局特效；只取后半段，
+     * 因为前段"飞入的光点"会和这里"整块图标飞过去"的画法重样 */
+    const tp = cellXY(T.r, T.c);
+    fxTail('color', 0.3, 0.95, { x: tp.x, y: tp.y, cell: tp.s, color: CFG.TILE_INFO[0].main });
     tickParticles(dt);
     drawParticles();
   }
@@ -436,16 +436,9 @@
         void q;
       }
     }
-    /* 旋转的光环，强化「全盘」的感觉 */
-    ctx.save();
-    ctx.globalAlpha = 1 - move;
-    ctx.strokeStyle = 'rgba(232,200,106,0.85)';
-    ctx.lineWidth = 3;
-    const R = Math.min(W, H) * (0.3 + 0.35 * move);
-    ctx.beginPath();
-    ctx.arc(W / 2, H / 2, R, -0.6 + move * 5, 1.6 + move * 5);
-    ctx.stroke();
-    ctx.restore();
+    /* 收束的金环交给对局特效；**不取前段**——前段是"整盘化墨"的黑罩，
+     * 而这里正在教"每块沿弧线飞到新位置"，盖住就白演了 */
+    fxTail('swap', 0.58, 1.5, { x: W / 2, y: H / 2, cell: cellSize() });
     tickParticles(dt);
     drawParticles();
   }
