@@ -16,3 +16,7 @@ Desktop.ini
 *.log
 *.tmp
 _screenshot_*.png
+
+# 美术评审工作目录（AI 生成的素材表原图、切片、设计稿对比页），几十 MB 且随时会重跑，
+# 属于过程文件不进仓库；成品素材在 assets/img，设计工具的脚本在 tools/
+art-review/

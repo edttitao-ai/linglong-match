@@ -1,32 +1,32 @@
 /* 玲珑消 · base.css — 设计令牌（字体 / 色板 / 阴影）、重置、整体布局 */
 
 :root {
-  /* ---- 纸（60%） ---- */
-  --paper: #F2E6CF;
-  --paper-hi: #FBF6EA;
-  --paper-lo: #E8D9BC;
-  --card: #FDF8EC;
+  /* ---- 漆（60%）---- */
+  --paper: #0B1120;
+  --paper-hi: #16203A;
+  --paper-lo: #070B14;
+  --card: #141B2C;
 
-  /* ---- 墨与线脚（30%） ---- */
-  --ink: #2B2620;
-  --ink-soft: #6B5B45;
-  --ink-faint: rgba(43, 38, 32, 0.42);
-  --line: #C8B08A;
-  --line-soft: rgba(122, 92, 52, 0.16);
-  --wood: #6B4B2A;
-  --wood-hi: #8A6236;
-  --wood-lo: #4A3320;
+  /* ---- 描金与线脚（30%）---- */
+  --ink: #F0DFAE;
+  --ink-soft: #C9A44C;
+  --ink-faint: rgba(240, 223, 174, 0.42);
+  --line: #8A6A24;
+  --line-soft: rgba(201,164,76,0.230);
+  --wood: #2A2016;
+  --wood-hi: #3E2F1E;
+  --wood-lo: #16110A;
 
-  /* ---- 强调（10%） ---- */
-  --cinnabar: #B8342C;
-  --cinnabar-hi: #D9483C;
-  --cinnabar-lo: #8E231D;
-  --gold: #C9A227;
-  --gold-hi: #E8C86A;
-  --gold-lo: #8A5F18;
-  --jade: #4E7C4A;
-  --jade-hi: #6E9C6A;
-  --indigo: #2E4E7E;
+  /* ---- 强调（10%）---- */
+  --cinnabar: #C0392B;
+  --cinnabar-hi: #D9503C;
+  --cinnabar-lo: #7E241C;
+  --gold: #C9A44C;
+  --gold-hi: #E8C877;
+  --gold-lo: #8A6A24;
+  --jade: #3E7C68;
+  --jade-hi: #5AA07C;
+  --indigo: #3A5E96;
 
   /* ---- 字体三栈：正文用黑体、大字用楷体、数字用拉丁字体优先 ---- */
   --font-ui: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "Microsoft YaHei",
@@ -35,11 +35,11 @@
   --font-num: "Bahnschrift SemiBold", "DIN Alternate", "Avenir Next Condensed",
               "Segoe UI Variable Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* ---- 立体感：硬边下压 + 柔和环境影 + 内高光 三层 ---- */
-  --sh-btn: 0 4px 0 var(--cinnabar-lo), 0 10px 18px rgba(120, 40, 24, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.38);
-  --sh-btn-press: 0 1px 0 var(--cinnabar-lo), 0 4px 8px rgba(120, 40, 24, 0.24), inset 0 2px 0 rgba(255, 255, 255, 0.28);
-  --sh-card: 0 2px 0 rgba(122, 92, 52, 0.16), inset 0 2px 0 rgba(255, 255, 255, 0.85);
-  --sh-panel: 0 24px 60px rgba(60, 40, 12, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  /* ---- 立体感：硬边下压 + 柔和环境影 + 内高光 三层（深底上影子要更黑、内高光要更暖）---- */
+  --sh-btn: 0 4px 0 var(--cinnabar-lo), 0 10px 18px rgba(0,0,0,0.660), inset 0 2px 0 rgba(255, 220, 160, 0.22);
+  --sh-btn-press: 0 1px 0 var(--cinnabar-lo), 0 4px 8px rgba(0,0,0,0.600), inset 0 2px 0 rgba(255, 220, 160, 0.16);
+  --sh-card: 0 2px 0 rgba(0,0,0,0.540), inset 0 2px 0 rgba(255, 225, 170, 0.10);
+  --sh-panel: 0 24px 60px rgba(0,0,0,0.792), inset 0 1px 0 rgba(255, 225, 170, 0.12);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -54,9 +54,9 @@ body {
   font: 400 15px/1.7 var(--font-ui);
   letter-spacing: 0;
   color: var(--ink);
-  background-color: #efe2c6;
+  background-color: #05070D;
   background-image:
-    radial-gradient(1200px 700px at 50% -10%, rgba(255, 252, 240, 0.85), rgba(255, 252, 240, 0) 70%),
+    radial-gradient(1200px 700px at 50% -10%, rgba(44, 60, 98, 0.85), rgba(44, 60, 98, 0) 70%),
     url("../assets/img/bg_paper.svg");
   background-size: auto, 420px 420px;
   overflow: hidden;

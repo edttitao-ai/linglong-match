@@ -48,8 +48,8 @@
 
 /* 当前关卡卡片：呼吸 */
 @keyframes breathe {
-  0%, 100% { transform: scale(1.04); box-shadow: 0 0 0 2px var(--gold-hi), 0 10px 20px rgba(150, 110, 20, 0.24); }
-  50% { transform: scale(1.055); box-shadow: 0 0 0 3px var(--gold-hi), 0 14px 26px rgba(150, 110, 20, 0.34); }
+  0%, 100% { transform: scale(1.04); box-shadow: 0 0 0 2px var(--gold-hi), 0 10px 20px rgba(201,164,76,0.276); }
+  50% { transform: scale(1.055); box-shadow: 0 0 0 3px var(--gold-hi), 0 14px 26px rgba(0,0,0,0.408); }
 }
 
 /* 印章：轻微呼吸（不做旋转，旋转会显得像 App 图标） */

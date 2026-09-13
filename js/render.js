@@ -136,7 +136,7 @@
       if (Anim.flash > 0) {
         ctx.save();
         ctx.globalAlpha = Anim.flash;
-        ctx.fillStyle = '#fffdf5';
+        ctx.fillStyle = '#FFEFC0';
         ctx.fillRect(0, 0, this.W, this.H);
         ctx.restore();
       }
@@ -150,17 +150,17 @@
       ctx.beginPath();
       this.roundRect(ctx, g.bx - g.cell * 0.3, g.by - g.cell * 0.3, g.board + g.cell * 0.6, g.board + g.cell * 0.6, r);
       const grd = ctx.createLinearGradient(g.bx, g.by, g.bx, g.by + g.board);
-      grd.addColorStop(0, 'rgba(255,252,242,0.80)');
-      grd.addColorStop(1, 'rgba(246,238,220,0.74)');
+      grd.addColorStop(0, 'rgba(22,32,58,0.94)');
+      grd.addColorStop(1, 'rgba(10,16,30,0.92)');
       ctx.fillStyle = grd;
-      ctx.shadowColor = 'rgba(90,64,32,0.22)';
+      ctx.shadowColor = 'rgba(0,0,0,0.62)';
       ctx.shadowBlur = 18;
       ctx.shadowOffsetY = 6;
       ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
-      ctx.strokeStyle = 'rgba(150,110,60,0.28)';
+      ctx.strokeStyle = 'rgba(201,164,76,0.34)';
       ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.restore();
@@ -187,9 +187,9 @@
           const pad = g.cell * 0.055;
           ctx.beginPath();
           this.roundRect(ctx, rc.x + pad, rc.y + pad, rc.w - pad * 2, rc.h - pad * 2, rr);
-          ctx.fillStyle = ((r + c) % 2 === 0) ? 'rgba(140,110,70,0.055)' : 'rgba(140,110,70,0.028)';
+          ctx.fillStyle = ((r + c) % 2 === 0) ? 'rgba(201,164,76,0.055)' : 'rgba(201,164,76,0.026)';
           ctx.fill();
-          ctx.strokeStyle = 'rgba(140,110,70,0.10)';
+          ctx.strokeStyle = 'rgba(201,164,76,0.10)';
           ctx.lineWidth = 1;
           ctx.stroke();
         }
@@ -336,6 +336,8 @@
       if (tile.s === S.TAIJI) {
         ctx.rotate(this.time * 0.9);
       } else {
+        /* 风符只做了一张素材，竖版旋转 90° 复用——比再生成一张稳，也不会两张风格对不上 */
+        if (tile.s === S.WIND_V) ctx.rotate(Math.PI / 2);
         const pulse = 1 + 0.05 * Math.sin(this.time * 4.2);
         ctx.scale(pulse, pulse);
       }
@@ -411,28 +413,23 @@
             /* 掉了 1 层：闪一下 */
             alpha = 1 - 0.35 * Math.sin(p * Math.PI);
           }
-          const imgKey = kind === O.FROST ? 'ob_frost' : (kind === O.STONE ? 'ob_stone' : 'ob_vine');
+          /* 覆盖层素材：霜与藤蔓本身是空心的环，铺满格子即可；
+           * 石锁是实心锁体，缩到 0.8 格，让底下方块的颜色还能从四周看出来——
+           * 石锁底下的块照样要参与配对，颜色看不见就没法玩了。 */
+          const imgKey = kind === O.FROST ? 'ob_frost'
+            : (kind === O.STONE ? (hp === 1 ? 'ob_stone_2' : 'ob_stone') : 'ob_vine');
           const img = A.img(imgKey);
+          const cover = kind === O.STONE ? 0.8 : 1.0;
+          const baseAlpha = kind === O.FROST ? 0.92 : 1;
           ctx.save();
-          ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+          ctx.globalAlpha = Math.max(0, Math.min(1, alpha * baseAlpha));
           ctx.translate(rc.x + rc.w / 2, rc.y + rc.h / 2);
           ctx.scale(scale, scale);
-          const s = g.cell * 1.0;
+          const s = g.cell * cover;
           if (img) {
             ctx.drawImage(img, -s / 2, -s / 2, s, s);
           } else {
             this.drawFallbackObstacle(ctx, kind, s, hp);
-          }
-          if (kind === O.STONE && hp === 1 && ob) {
-            /* 已受损的石锁：加一道裂纹 */
-            ctx.strokeStyle = 'rgba(60,50,40,0.55)';
-            ctx.lineWidth = Math.max(1.2, s * 0.03);
-            ctx.beginPath();
-            ctx.moveTo(-s * 0.12, -s * 0.34);
-            ctx.lineTo(s * 0.06, -s * 0.06);
-            ctx.lineTo(-s * 0.08, s * 0.12);
-            ctx.lineTo(s * 0.10, s * 0.34);
-            ctx.stroke();
           }
           ctx.restore();
         }

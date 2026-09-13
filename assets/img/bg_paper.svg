@@ -10,10 +10,7 @@
       <feColorMatrix type="saturate" values="0"/>
     </filter>
   </defs>
-  <rect width="420" height="420" fill="#f3e8d1"/>
-  <rect width="420" height="420" filter="url(#fiber)" opacity="0.16"/>
-  <rect width="420" height="420" filter="url(#grain)" opacity="0.05"/>
-  <g stroke="rgba(160,132,88,0.10)" stroke-width="1">
-    <path d="M0 120 H420 M0 262 H420 M140 0 V420 M286 0 V420"/>
-  </g>
+  <rect width="420" height="420" fill="#0F1728"/>
+  <rect width="420" height="420" filter="url(#fiber)" opacity="0.14"/>
+  <rect width="420" height="420" filter="url(#grain)" opacity="0.04"/>
 </svg>

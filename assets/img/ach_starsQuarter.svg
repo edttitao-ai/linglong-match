@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <path d="M6.20 3.80 L7.20 6.42 L10.00 6.56 L7.82 8.33 L8.55 11.04 L6.20 9.50 L3.85 11.04 L4.58 8.33 L2.40 6.56 L5.20 6.42 Z" fill="#E8C86A" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>
-  <path d="M17.80 3.80 L18.80 6.42 L21.60 6.56 L19.42 8.33 L20.15 11.04 L17.80 9.50 L15.45 11.04 L16.18 8.33 L14.00 6.56 L16.80 6.42 Z" fill="#E8C86A" stroke="#8A5F18" stroke-width="1.1" stroke-linejoin="round"/>
-  <path d="M12.00 12.40 L13.18 15.38 L16.37 15.58 L13.90 17.62 L14.70 20.72 L12.00 19.00 L9.30 20.72 L10.10 17.62 L7.63 15.58 L10.82 15.38 Z" fill="#E8C86A" stroke="#8A5F18" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M6.20 3.80 L7.20 6.42 L10.00 6.56 L7.82 8.33 L8.55 11.04 L6.20 9.50 L3.85 11.04 L4.58 8.33 L2.40 6.56 L5.20 6.42 Z" fill="#E8C877" stroke="#A8812C" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M17.80 3.80 L18.80 6.42 L21.60 6.56 L19.42 8.33 L20.15 11.04 L17.80 9.50 L15.45 11.04 L16.18 8.33 L14.00 6.56 L16.80 6.42 Z" fill="#E8C877" stroke="#A8812C" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M12.00 12.40 L13.18 15.38 L16.37 15.58 L13.90 17.62 L14.70 20.72 L12.00 19.00 L9.30 20.72 L10.10 17.62 L7.63 15.58 L10.82 15.38 Z" fill="#E8C877" stroke="#A8812C" stroke-width="1.2" stroke-linejoin="round"/>
 </svg>

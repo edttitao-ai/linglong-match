@@ -2,21 +2,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 480" preserveAspectRatio="xMidYMax slice">
   <defs>
     <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7E9A82" stop-opacity="0.42"/>
-      <stop offset="1" stop-color="#7E9A82" stop-opacity="0.10"/>
+      <stop offset="0" stop-color="#24485A" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#24485A" stop-opacity="0.10"/>
     </linearGradient>
     <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4A6B52" stop-opacity="0.56"/>
-      <stop offset="1" stop-color="#4A6B52" stop-opacity="0.16"/>
+      <stop offset="0" stop-color="#17323F" stop-opacity="0.56"/>
+      <stop offset="1" stop-color="#17323F" stop-opacity="0.16"/>
     </linearGradient>
     <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2F4A3A" stop-opacity="0.68"/>
-      <stop offset="1" stop-color="#2F4A3A" stop-opacity="0.26"/>
+      <stop offset="0" stop-color="#0E2130" stop-opacity="0.68"/>
+      <stop offset="1" stop-color="#0E2130" stop-opacity="0.26"/>
     </linearGradient>
     <linearGradient id="mist" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFFCF0" stop-opacity="0"/>
-      <stop offset="0.5" stop-color="#FFFCF0" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#FFFCF0" stop-opacity="0"/>
+      <stop offset="0" stop-color="#182240" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#182240" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#182240" stop-opacity="0"/>
     </linearGradient>
   </defs>
   <path d="M0 480 L0 266 Q75 139 150 148 Q245 139 340 236 Q455 129 570 138 Q690 129 810 228 Q925 147 1040 156 Q1155 147 1270 242 Q1390 159 1510 168 Q1635 159 1760 232 Q1840 181 1920 190 L1920 480 Z" fill="url(#m1)"/>

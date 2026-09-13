@@ -762,10 +762,12 @@ section('9. 局内技能与灵力');
   eq(badPlaceholder.length, 0, '技能名称/效果/提示文案不含未替换占位符' +
     (badPlaceholder.length ? '：' + badPlaceholder.join(' | ') : ''));
 
-  /* 9l. 技能图标文件真的存在（生成脚本跑过） */
+  /* 9l. 技能图标文件真的存在（生成脚本跑过）
+   * 后缀不写死：A 方案起技能图标从 SVG 换成了 PNG，将来再换格式不该让这条断言失效 */
   const imgDir = path.join(__dirname, '..', 'assets', 'img');
   const missFile = order.filter(function (id) {
-    return !require('fs').existsSync(path.join(imgDir, SK.def(id).icon + '.svg'));
+    const base = path.join(imgDir, SK.def(id).icon);
+    return !['.png', '.svg'].some(function (ext) { return require('fs').existsSync(base + ext); });
   });
   eq(missFile.length, 0, '技能图标文件已生成' + (missFile.length ? '：' + missFile.join(' | ') : ''));
 }

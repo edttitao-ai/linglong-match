@@ -44,7 +44,8 @@
           const info = CFG.TILE_INFO[o.color];
           icon.innerHTML = '<img src="' + LL.Assets.path('tile_' + info.id) + '" alt="">';
         } else {
-          icon.innerHTML = '<img src="' + LL.Assets.path('ob_stone') + '" alt="">';
+          /* 目标卡里用"整块牌"版本，不用盘面上的空心覆盖层——覆盖层中间是透的，单看像个甜甜圈 */
+          icon.innerHTML = '<img src="' + LL.Assets.path('ob_stone_card') + '" alt="">';
         }
         const body = U.el('div', 'obj-body');
         const text = U.el('div', 'obj-text');
