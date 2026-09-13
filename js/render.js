@@ -332,7 +332,27 @@
     drawBadge(ctx, tile, size) {
       const map = { 1: 'sp_wind_h', 2: 'sp_wind_v', 3: 'sp_thunder', 4: 'sp_taiji' };
       const img = A.img(map[tile.s]);
-      const bs = size * (tile.s === S.TAIJI ? 0.92 : 0.72);
+      const bs = size * (tile.s === S.TAIJI ? 0.92 : 0.62);
+      const info = tile.t >= 0 ? CFG.TILE_INFO[tile.t] : null;
+
+      /* 颜色底环：符咒的素材是"带深色底盘的一整张卡"，铺满格子就把方块的颜色盖住了——
+       * 而符咒照样要按颜色配对，看不出颜色就没法玩。所以在符咒底下压一圈方块本色的环，
+       * 环比符咒大一圈，颜色就一直在。太极是无色块，没有颜色可露，不画。 */
+      if (info && tile.s !== S.TAIJI) {
+        const rr = size * 0.40;
+        ctx.save();
+        ctx.strokeStyle = info.main;
+        ctx.lineWidth = Math.max(3, size * 0.13);
+        this.roundRect(ctx, -rr, -rr, rr * 2, rr * 2, rr * 0.6);
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(5,7,13,0.5)';
+        ctx.lineWidth = Math.max(1, size * 0.022);
+        const rr2 = rr + size * 0.085;
+        this.roundRect(ctx, -rr2, -rr2, rr2 * 2, rr2 * 2, rr2 * 0.6);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       ctx.save();
       if (tile.s === S.TAIJI) {
         ctx.rotate(this.time * 0.9);
