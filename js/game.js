@@ -565,24 +565,37 @@
       }
 
       /* 特殊块引爆：走 fx.js 的分阶段演出（风头推进 / 落雷 / 法阵），
-       * 震屏与闪白同样由 CFG.FX 表统一给，这里只负责起特效与音效 */
+       * 震屏与闪白同样由 CFG.FX 表统一给，这里只负责起特效与音效。
+       *
+       * 技能（移山 / 如意锤）引爆的要错开一拍：移山的白光横扫和风符的风刃是同一个方向、
+       * 同一时刻起，同时放的话风刃被光束盖住——玩家看到的是"行清了，但没看出是特殊块炸的"
+       * （报障原话："移山技能是否能触发特殊块"）。错开后读起来才是"光扫过 → 那枚符被点着 → 炸开"。
+       * 音效跟着一起延后，别让声音和画面差开。 */
       const seen = {};
+      const stagger = ev.skill ? 200 : 0;
       for (let i = 0; i < ev.fires.length; i++) {
-        const f = ev.fires[i];
-        const p = Render.cellXY(f.r, f.c);
-        const base = { x: p.x, y: p.y, cell: Render.geom.cell,
-                       bx: Render.geom.bx, by: Render.geom.by, w: Render.geom.board, h: Render.geom.board };
-        if (f.s === S.WIND_H || f.s === S.WIND_V) {
-          const vertical = f.s === S.WIND_V;
-          FX.spawn('wind', Object.assign({}, base, { vertical: vertical }));
-          if (!seen.wind) { Audio.play('wind'); seen.wind = 1; }
-        } else if (f.s === S.THUNDER) {
-          FX.spawn('thunder', base);
-          if (!seen.thunder) { Audio.play('thunder'); seen.thunder = 1; }
-        } else if (f.s === S.TAIJI) {
-          FX.spawn('taiji', base);
-          if (!seen.taiji) { Audio.play('taiji'); seen.taiji = 1; }
-        }
+        (function (f, idx) {
+          const burst = function () {
+            const p = Render.cellXY(f.r, f.c);
+            const base = { x: p.x, y: p.y, cell: Render.geom.cell,
+                           bx: Render.geom.bx, by: Render.geom.by, w: Render.geom.board, h: Render.geom.board };
+            if (f.s === S.WIND_H || f.s === S.WIND_V) {
+              FX.spawn('wind', Object.assign({}, base, { vertical: f.s === S.WIND_V }));
+              if (!seen.wind) { Audio.play('wind'); seen.wind = 1; }
+            } else if (f.s === S.THUNDER) {
+              FX.spawn('thunder', base);
+              if (!seen.thunder) { Audio.play('thunder'); seen.thunder = 1; }
+            } else if (f.s === S.TAIJI) {
+              FX.spawn('taiji', base);
+              if (!seen.taiji) { Audio.play('taiji'); seen.taiji = 1; }
+            }
+          };
+          /* 第一个也要延后：idx=0 时若延迟为 0，风刃又和光束撞在同一帧了；
+           * 之后逐个再错开，读起来像骨牌一样一路点着过去 */
+          const delay = stagger ? stagger + stagger * idx : 0;
+          if (delay > 0) setTimeout(burst, Math.min(delay, 900));
+          else burst();
+        })(ev.fires[i], i);
       }
 
       /* 分数飘字与连锁横幅 */

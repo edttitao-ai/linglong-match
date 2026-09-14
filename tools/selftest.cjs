@@ -603,6 +603,34 @@ section('9. 局内技能与灵力');
   ok(cLast && cLast.kind === 'turnEnd', '移山回合能正常收束');
   eq(B.findMatches(cb).length, 0, '移山回合结束后无残留三连');
 
+  /* 9c2. 移山（如意锤同理）路过特殊块要把它引爆 —— 技能说明里承诺了
+   *「清除目标格所在的行与列，并引爆沿途的特殊块」。有人报"移山是不是不能触发特殊块"，
+   * 查下来逻辑是通的（是特效被光束盖住，看不出来），但这条承诺没有断言守着，补上。 */
+  const SPEC_TYPES = [[CFG.SPECIAL.WIND_H, '横风符'], [CFG.SPECIAL.WIND_V, '竖风符'],
+    [CFG.SPECIAL.THUNDER, '惊雷'], [CFG.SPECIAL.TAIJI, '太极']];
+  const noFire = SPEC_TYPES.filter(function (pair) {
+    const fb = B.create({ colors: 5, rnd: U.rng(43) });
+    fb.cells[4][4] = B.tile(2, pair[0]);
+    const fp = SK.planCross(fb, { r: 4, c: 1 });
+    return !fp.fires.some(function (f) { return f.r === 4 && f.c === 4; });
+  });
+  eq(noFire.length, 0, '移山引爆沿途的特殊块（四种都要）' +
+    (noFire.length ? '：' + noFire.map(function (p) { return p[1]; }).join(' | ') : ''));
+  const blown = SPEC_TYPES.filter(function (pair) {
+    const fb = B.create({ colors: 5, rnd: U.rng(43) });
+    fb.cells[4][4] = B.tile(2, pair[0]);
+    const frs = R.create(fb);
+    R.beginSkill(frs, SK.planCross(fb, { r: 4, c: 1 }));
+    let ev2 = R.step(frs), got = 0, g2 = 0;
+    while (ev2 && ev2.kind !== 'turnEnd' && g2++ < 400) {
+      got += (ev2.fires || []).length;
+      ev2 = R.step(frs);
+    }
+    return got === 0;
+  });
+  eq(blown.length, 0, '被移山引爆的特殊块会把 fires 传到回合事件里（特效与音效靠它）' +
+    (blown.length ? '：' + blown.map(function (p) { return p[1]; }).join(' | ') : ''));
+
   /* 9d. 灵犀一点：改色只认普通块，改完色由匹配扫描自然连锁 */
   const rb = B.create({ colors: 4, rnd: U.rng(47) });
   /* 造一个「差一块」的局面：某行两个同色隔一格 */
