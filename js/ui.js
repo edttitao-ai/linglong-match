@@ -80,6 +80,7 @@
         skillBar: $('#skillBar'),
         qiFill: $('#qiFill'),
         qiValue: $('#qiValue'),
+        qiMax: $('#qiMax'),
         qiGain: $('#qiGain'),
         skillSlots: $('#skillSlots'),
         colorRing: $('#colorRing'),
@@ -643,6 +644,9 @@
       bar.classList.toggle('full', qi >= max);
       if (this.els.qiFill) this.els.qiFill.style.width = Math.round(Math.min(1, qi / max) * 100) + '%';
       if (this.els.qiValue) this.els.qiValue.textContent = String(Math.round(qi));
+      /* 上限要看得见：只显示当前值的话，玩家不知道槽还剩多少空间，
+       * 也看不出"再涨就要溢出折算成分数"的临界点在哪。 */
+      if (this.els.qiMax) this.els.qiMax.textContent = '/' + max;
 
       const slots = this.els.skillSlots;
       if (slots) {
@@ -874,6 +878,9 @@
       bar.classList.toggle('full', qi >= max);
       if (this.els.qiFill) this.els.qiFill.style.width = Math.round(Math.min(1, qi / max) * 100) + '%';
       if (this.els.qiValue) this.els.qiValue.textContent = String(Math.round(qi));
+      /* 上限要看得见：只显示当前值的话，玩家不知道槽还剩多少空间，
+       * 也看不出"再涨就要溢出折算成分数"的临界点在哪。 */
+      if (this.els.qiMax) this.els.qiMax.textContent = '/' + max;
 
       const g = this.els.qiGain;
       if (g) {
