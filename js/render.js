@@ -151,8 +151,8 @@
       ctx.beginPath();
       this.roundRect(ctx, g.bx - g.cell * 0.3, g.by - g.cell * 0.3, g.board + g.cell * 0.6, g.board + g.cell * 0.6, r);
       const grd = ctx.createLinearGradient(g.bx, g.by, g.bx, g.by + g.board);
-      grd.addColorStop(0, 'rgba(22,32,58,0.94)');
-      grd.addColorStop(1, 'rgba(10,16,30,0.92)');
+      grd.addColorStop(0, 'rgba(34,47,78,0.94)');
+      grd.addColorStop(1, 'rgba(18,27,46,0.92)');
       ctx.fillStyle = grd;
       ctx.shadowColor = 'rgba(0,0,0,0.62)';
       ctx.shadowBlur = 18;

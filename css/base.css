@@ -2,10 +2,10 @@
 
 :root {
   /* ---- 漆（60%）---- */
-  --paper: #0B1120;
-  --paper-hi: #16203A;
-  --paper-lo: #070B14;
-  --card: #141B2C;
+  --paper: #131E33;
+  --paper-hi: #25334F;
+  --paper-lo: #0C1626;
+  --card: #1F2A42;
 
   /* ---- 描金与线脚（30%）---- */
   --ink: #F0DFAE;
@@ -54,7 +54,7 @@ body {
   font: 400 15px/1.7 var(--font-ui);
   letter-spacing: 0;
   color: var(--ink);
-  background-color: #05070D;
+  background-color: #080F1C;
   background-image:
     radial-gradient(1200px 700px at 50% -10%, rgba(44, 60, 98, 0.85), rgba(44, 60, 98, 0) 70%),
     url("../assets/img/bg_paper.svg");

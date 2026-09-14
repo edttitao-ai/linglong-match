@@ -14,7 +14,7 @@
   gap: 8px 12px;
   align-items: center;
   padding: 10px 12px 12px;
-  background: linear-gradient(180deg, rgba(21,28,46,0.960), rgba(21,28,46,0.900));
+  background: linear-gradient(180deg, rgba(31,42,66,0.960), rgba(31,42,66,0.900));
   border-bottom: 1px solid var(--line-soft);
   box-shadow: 0 4px 14px rgba(201,164,76,0.115);
 }
@@ -40,7 +40,7 @@
 }
 
 .hud-card {
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   border: 1px solid var(--line);
   border-radius: 14px;
   box-shadow: var(--sh-card);
@@ -182,7 +182,7 @@
   flex: 0 0 auto;
   border-radius: 12px;
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.230), inset 0 2px 0 rgba(255,255,255,0.112);
   display: grid;
   place-items: center;
@@ -206,7 +206,7 @@
   border-radius: 16px;
   font-size: 20px;
   font-weight: 700;
-  color: #16203A;
+  color: #25334F;
   background: linear-gradient(180deg, var(--cinnabar-hi), var(--cinnabar) 62%, var(--cinnabar-lo));
   box-shadow: var(--sh-btn);
   text-shadow: 0 1px 1px rgba(0,0,0,0.540);
@@ -223,7 +223,7 @@
   font-weight: 500;
   color: var(--ink);
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.207), inset 0 2px 0 rgba(255,255,255,0.112);
 }
 
@@ -239,7 +239,7 @@
   padding: 8px 16px;
   border-radius: 12px;
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.207);
   font-size: 16px;
   color: var(--ink);
@@ -290,7 +290,7 @@
   background-image:
     url("../assets/img/ui_corner_tl.svg"), url("../assets/img/ui_corner_tr.svg"),
     url("../assets/img/ui_corner_bl.svg"), url("../assets/img/ui_corner_br.svg"),
-    linear-gradient(180deg, #141B2C, var(--paper-hi));
+    linear-gradient(180deg, #1F2A42, var(--paper-hi));
   background-position: 14px 14px, calc(100% - 14px) 14px, 14px calc(100% - 14px), calc(100% - 14px) calc(100% - 14px);
   background-repeat: no-repeat;
   background-size: 22px 22px, 22px 22px, 22px 22px, 22px 22px, auto;
@@ -329,7 +329,7 @@
 
 /* 漆底：从靛蓝到墨黑的一层柔光渐变，玉球浮在上面 */
 #title, #loading {
-  background: radial-gradient(120% 86% at 50% 34%, #16223C 0%, #0B1120 48%, #05070D 100%);
+  background: radial-gradient(120% 86% at 50% 34%, #16223C 0%, #131E33 48%, #080F1C 100%);
 }
 
 /* 玉球：整页的主视觉。尺寸跟着视口走，窄屏再压一档 */
@@ -480,7 +480,7 @@
   place-items: center;
   border-radius: 4px;
   background: linear-gradient(160deg, var(--cinnabar-hi), #A82C22);
-  color: #16203A;
+  color: #25334F;
   font-family: var(--font-title);
   font-size: 22px;
   letter-spacing: 0.06em;
@@ -488,7 +488,7 @@
   text-align: center;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.504), inset 0 0 0 1px rgba(21,28,46,0.650);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.504), inset 0 0 0 1px rgba(31,42,66,0.650);
 }
 
 .seal.big { width: 78px; height: 78px; font-size: 26px; }
@@ -583,7 +583,7 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--gold-lo);
-  background: rgba(21,28,46,0.900);
+  background: rgba(31,42,66,0.900);
   border: 1px solid rgba(0,0,0,0.540);
   border-radius: 999px;
   padding: 4px 14px;
@@ -613,7 +613,7 @@
   padding: 12px 8px 10px;
   border-radius: 16px;
   background-color: var(--card);
-  background-image: linear-gradient(180deg, #141B2C, var(--card));
+  background-image: linear-gradient(180deg, #1F2A42, var(--card));
   border: 1.5px solid var(--line);
   box-shadow: 0 3px 0 rgba(201,164,76,0.253), 0 8px 16px rgba(201,164,76,0.161);
   display: flex;
@@ -683,7 +683,7 @@
   border-radius: 999px;
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: #16203A;
+  color: #25334F;
   background: linear-gradient(180deg, var(--cinnabar-hi), var(--cinnabar));
   box-shadow: 0 2px 6px rgba(0,0,0,0.480);
   white-space: nowrap;
@@ -699,7 +699,7 @@
   height: 8px;
   border-radius: 50%;
   background: var(--cinnabar-hi);
-  box-shadow: 0 0 0 2px rgba(21,28,46,0.850);
+  box-shadow: 0 0 0 2px rgba(31,42,66,0.850);
 }
 
 .ghost { position: relative; }
@@ -727,7 +727,7 @@
   gap: 4px;
   padding: 8px;
   border-radius: 12px;
-  background: rgba(21,28,46,0.720);
+  background: rgba(31,42,66,0.720);
   border: 1px solid var(--line-soft);
 }
 
@@ -786,7 +786,7 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: rgba(21,28,46,0.720);
+  background: rgba(31,42,66,0.720);
   border: 1px solid var(--line-soft);
   font-size: 14px;
   color: var(--ink-soft);
@@ -802,7 +802,7 @@
 .streak-row.today {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(0,0,0,0.600);
-  background: #141B2C;
+  background: #1F2A42;
   color: var(--ink);
 }
 
@@ -830,12 +830,12 @@
   letter-spacing: 0.08em;
   color: var(--ink-soft);
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.161);
 }
 
 .map-tabs button.on {
-  color: #16203A;
+  color: #25334F;
   border-color: var(--cinnabar-lo);
   background: linear-gradient(180deg, var(--cinnabar-hi), var(--cinnabar));
   box-shadow: 0 2px 0 var(--cinnabar-lo);
@@ -849,7 +849,7 @@
   margin: 4px 18px 24px;
   padding: 20px;
   border-radius: 18px;
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   border: 1.5px solid var(--line);
   box-shadow: 0 4px 0 rgba(201,164,76,0.184), 0 12px 22px rgba(201,164,76,0.138);
   display: flex;
@@ -884,7 +884,7 @@
   gap: 12px;
   padding: 7px 12px;
   border-radius: 10px;
-  background: rgba(21,28,46,0.850);
+  background: rgba(31,42,66,0.850);
   border: 1px solid var(--line-soft);
   font-size: 14px;
   color: var(--ink-soft);
@@ -905,7 +905,7 @@
   margin: 4px 18px 12px;
   padding: 12px;
   border-radius: 16px;
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   border: 1.5px solid var(--line);
   box-shadow: 0 3px 0 rgba(201,164,76,0.184);
   text-align: center;
@@ -928,7 +928,7 @@
   aspect-ratio: 320 / 200;
   border-radius: 10px;
   overflow: hidden;
-  background: linear-gradient(180deg, #141B2C, #182238);
+  background: linear-gradient(180deg, #1F2A42, #182238);
   border: 1px solid var(--line-soft);
   box-shadow: inset 0 1px 3px rgba(201,164,76,0.138);
 }
@@ -971,7 +971,7 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(21,28,46,0.720);
+  background: rgba(31,42,66,0.720);
   border: 1px solid var(--line-soft);
   opacity: 0.62;
 }
@@ -1026,7 +1026,7 @@
   padding: 6px 12px 6px 8px;
   border-radius: 12px;
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.184);
   font-size: 13px;
   color: var(--ink-soft);
@@ -1045,7 +1045,7 @@
 
 .boost-slot.armed {
   border-color: var(--gold);
-  background: linear-gradient(180deg, #16203A, #1C2740);
+  background: linear-gradient(180deg, #25334F, #1C2740);
   box-shadow: 0 0 0 2px rgba(0,0,0,0.660), 0 2px 0 rgba(201,164,76,0.184);
   color: var(--ink);
 }
@@ -1065,7 +1065,7 @@
 .quest-row {
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(21,28,46,0.780);
+  background: rgba(31,42,66,0.780);
   border: 1px solid var(--line-soft);
 }
 
@@ -1111,14 +1111,14 @@
   border-radius: 999px;
   font-size: 13px;
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.184);
   color: var(--ink);
 }
 
 .q-claim {
   border-color: rgba(192,57,43,0.500);
-  color: #16203A;
+  color: #25334F;
   background: linear-gradient(180deg, var(--cinnabar-hi), var(--cinnabar));
   box-shadow: 0 2px 0 var(--cinnabar-lo);
 }
@@ -1142,7 +1142,7 @@
   gap: 6px;
   padding: 4px 13px 4px 8px;
   border-radius: 999px;
-  background: rgba(21,28,46,0.940);
+  background: rgba(31,42,66,0.940);
   border: 1px solid rgba(0,0,0,0.600);
   box-shadow: 0 2px 0 rgba(201,164,76,0.184), inset 0 1px 0 rgba(255,255,255,0.119);
   font-family: var(--font-num);
@@ -1170,7 +1170,7 @@
 .revive-cost {
   padding: 6px 16px;
   border-radius: 999px;
-  background: rgba(21,28,46,0.900);
+  background: rgba(31,42,66,0.900);
   border: 1px solid rgba(0,0,0,0.540);
   font-family: var(--font-num);
   font-size: 15px;
@@ -1232,7 +1232,7 @@
   align-items: baseline;
   padding: 8px 14px;
   border-radius: 12px;
-  background: rgba(21,28,46,0.900);
+  background: rgba(31,42,66,0.900);
   border: 1px solid var(--line-soft);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.112);
   font-size: 14px;
@@ -1309,7 +1309,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   color: #5C4310;
-  background: rgba(21,28,46,0.860);
+  background: rgba(31,42,66,0.860);
   border: 1px solid rgba(0,0,0,0.600);
   box-shadow: 0 6px 16px rgba(201,164,76,0.253);
 }
@@ -1318,7 +1318,7 @@
   margin-top: 6px;
   font-size: 13px;
   color: #2A2016;
-  text-shadow: 0 1px 0 rgba(21,28,46,0.900);
+  text-shadow: 0 1px 0 rgba(31,42,66,0.900);
 }
 
 /* ================= 局内技能（灵力） ================= */
@@ -1334,7 +1334,7 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(21,28,46,0.940), rgba(21,28,46,0.940));
+  background: linear-gradient(180deg, rgba(31,42,66,0.940), rgba(31,42,66,0.940));
   border: 1.5px solid var(--line);
   box-shadow: 0 6px 16px rgba(201,164,76,0.230), inset 0 2px 0 rgba(255,255,255,0.112);
   max-width: calc(100% - 16px);
@@ -1406,7 +1406,7 @@
   height: 46px;
   border-radius: 14px;
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   box-shadow: 0 2px 0 rgba(201,164,76,0.184);
   display: flex;
   align-items: center;
@@ -1422,7 +1422,7 @@
   bottom: -3px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(21,28,46,0.950);
+  background: rgba(31,42,66,0.950);
   border: 1px solid var(--line);
   font-family: var(--font-num);
   font-size: 10px;
@@ -1446,7 +1446,7 @@
 /* 瞄准中：朱砂描边 + 呼吸；这是最强的状态提示 */
 .skill-slot.armed {
   border-color: var(--cinnabar);
-  background: linear-gradient(180deg, #16203A, #2A1C24);
+  background: linear-gradient(180deg, #25334F, #2A1C24);
   box-shadow: 0 0 0 2px rgba(192,57,43,0.450), 0 2px 0 rgba(201,164,76,0.184);
   animation: skillArmed 1.1s ease-in-out infinite;
 }
@@ -1464,7 +1464,7 @@
   padding: 3px 12px;
   border-radius: 999px;
   background: rgba(240,223,174,0.820);
-  color: #16203A;
+  color: #25334F;
   font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
@@ -1480,7 +1480,7 @@
   gap: 8px;
   padding: 8px 10px;
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(21,28,46,0.960), rgba(21,28,46,0.960));
+  background: linear-gradient(180deg, rgba(31,42,66,0.960), rgba(31,42,66,0.960));
   border: 1.5px solid var(--gold);
   box-shadow: 0 8px 20px rgba(201,164,76,0.276);
 }
@@ -1538,7 +1538,7 @@
   max-width: min(280px, calc(100vw - 32px));
   padding: 9px 13px 10px;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(21,28,46,0.960), rgba(21,28,46,0.960));
+  background: linear-gradient(180deg, rgba(31,42,66,0.960), rgba(31,42,66,0.960));
   border: 1.5px solid var(--gold);
   box-shadow: 0 10px 24px rgba(201,164,76,0.299), inset 0 2px 0 rgba(255,255,255,0.112);
   pointer-events: none;
@@ -1622,7 +1622,7 @@
   max-height: 152px;
   border-radius: 13px;
   background:
-    linear-gradient(180deg, rgba(21,28,46,0.960), rgba(21,28,46,0.960));
+    linear-gradient(180deg, rgba(31,42,66,0.960), rgba(31,42,66,0.960));
   border: 1.5px solid var(--line);
   box-shadow: inset 0 2px 6px rgba(201,164,76,0.184);
 }
@@ -1650,7 +1650,7 @@
   gap: 10px;
   padding: 8px 11px;
   border-radius: 13px;
-  background: linear-gradient(180deg, #141B2C, var(--paper-hi));
+  background: linear-gradient(180deg, #1F2A42, var(--paper-hi));
   border: 1.5px solid var(--line);
   box-shadow: 0 2px 0 rgba(201,164,76,0.138);
   text-align: left;
@@ -1663,7 +1663,7 @@
 /* 正在演示的那一条：金边，和演示窗口呼应 */
 .si-row.on {
   border-color: var(--gold);
-  background: linear-gradient(180deg, #16203A, #1C2740);
+  background: linear-gradient(180deg, #25334F, #1C2740);
   box-shadow: 0 0 0 2px rgba(0,0,0,0.600), 0 2px 0 rgba(201,164,76,0.138);
 }
 
@@ -1717,5 +1717,5 @@
 
 /* 教学面板里的 sticky 按钮：内容滚到它下面时要遮住，所以补一层纸底 */
 .skill-intro-panel > .primary.wide {
-  box-shadow: 0 -14px 18px -8px rgba(21,28,46,0.960), var(--sh-btn);
+  box-shadow: 0 -14px 18px -8px rgba(31,42,66,0.960), var(--sh-btn);
 }
