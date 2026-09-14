@@ -327,84 +327,137 @@
 
 /* ================= 标题页 / 加载页 ================= */
 
-/* 不做重度遮罩：让宣纸保持明亮，靠水墨远山与四角压暗来构图 */
+/* 漆底：从靛蓝到墨黑的一层柔光渐变，玉球浮在上面 */
 #title, #loading {
-  background:
-    radial-gradient(140% 100% at 50% 34%, rgba(240,223,174,0.180), rgba(201,164,76,0.230) 78%),
-    linear-gradient(180deg, rgba(240,223,174,0.056) 0%, rgba(240,223,174,0.000) 42%, rgba(201,164,76,0.230) 100%);
+  background: radial-gradient(120% 86% at 50% 34%, #16223C 0%, #0B1120 48%, #05070D 100%);
 }
 
-/* 水墨远山（SVG 三层山脊 + 云雾带） */
-#title::before, #loading::before {
-  content: "";
+/* 玉球：整页的主视觉。尺寸跟着视口高度走，窄屏再压一档 */
+#title { --ball: min(500px, 62vh, 78vw); }
+
+.title-ball {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 54vh;
+  left: 50%;
+  top: 1.5vh;
+  width: var(--ball);
+  height: auto;
+  transform: translateX(-50%);
   pointer-events: none;
-  background: url("../assets/img/bg_mountains.svg") center bottom / auto 100% no-repeat;
+  filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.75));
+  animation: ballIn 0.8s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+@keyframes ballIn {
+  from { opacity: 0; transform: translateX(-50%) scale(0.92); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
 }
 
-#title::after, #loading::after {
-  content: "";
+/* 球心的圆窗：标题就写在里面（窗心 = 球的中心） */
+.medal {
   position: absolute;
-  right: 12%;
-  top: 10%;
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0.85;
-  background: radial-gradient(circle at 42% 38%, rgba(21,28,46,0.950), rgba(240,223,174,0.140) 58%, rgba(240,223,174,0.000) 72%);
-  box-shadow: 0 0 70px 22px rgba(240,223,174,0.112);
-}
-
-.title-wrap {
-  position: relative;
+  left: 50%;
+  top: calc(1.5vh + var(--ball) * 0.5);
+  width: calc(var(--ball) * 0.46);
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 4px;
   text-align: center;
-  animation: riseIn 0.5s ease-out;
+  pointer-events: none;
 }
+.medal .seal { width: calc(var(--ball) * 0.098); height: calc(var(--ball) * 0.098); font-size: calc(var(--ball) * 0.038); }
 
-.game-title {
+.medal .game-title {
   margin: 0;
   font-family: var(--font-title);
-  font-size: clamp(46px, 13vw, 74px);
+  font-size: calc(var(--ball) * 0.108);
   font-weight: 700;
-  letter-spacing: 0.2em;
-  text-indent: 0.2em;
-  line-height: 1.1;
-  background: linear-gradient(180deg, #1B2440 0%, #F2D98F 38%, #D9A63C 64%, #F7E7C0 100%);
+  letter-spacing: 0.1em;
+  text-indent: 0.1em;
+  line-height: 1.08;
+  background: linear-gradient(180deg, #FDF6DC 0%, #F2D98F 32%, #C9A44C 70%, #F7E7C0 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.900)) drop-shadow(0 4px 0 rgba(0,0,0,0.720))
-          drop-shadow(0 12px 20px rgba(0,0,0,0.540));
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.9)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
 }
 
-.title-wrap .sub {
-  font-size: 13px;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  color: #B08C3C;
-  text-shadow: 0 1px 0 rgba(21,28,46,0.850);
+/* 加载页里的标题：小一号，同一个金色渐变（页面上还有一颗半透明的球） */
+.load-panel .game-title {
+  margin: 6px 0 2px;
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-indent: 0.16em;
+  background: linear-gradient(180deg, #FDF6DC 0%, #F2D98F 32%, #C9A44C 70%, #F7E7C0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+#loading { --ball: min(560px, 74vh, 82vw); }
+/* 加载页的球：整颗居中压在面板后面当水印（只露个顶会像个穹顶，很怪） */
+.load-ball { top: 50%; transform: translate(-50%, -50%); opacity: 0.3; animation: none; }
+
+.title-sub {
+  font-size: calc(var(--ball) * 0.022);
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  color: #F0DFAE;
+  text-shadow: 0 1px 3px rgba(5, 7, 13, 0.95), 0 0 10px rgba(5, 7, 13, 0.8);
 }
 
-.title-wrap .btn-col { width: min(288px, 76vw); gap: 14px; margin-top: 12px; }
+/* 两侧六宝：绕球站成两列，窄屏收起 */
+.t-side {
+  position: absolute;
+  top: 50%;
+  width: calc(var(--ball) * 0.15);
+  height: auto;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+}
+.t-side.tl1 { left: 5vw; margin-top: calc(var(--ball) * -0.24); }
+.t-side.tl2 { left: 5vw; }
+.t-side.tl3 { left: 5vw; margin-top: calc(var(--ball) * 0.24); }
+.t-side.tr1 { right: 5vw; margin-top: calc(var(--ball) * -0.24); }
+.t-side.tr2 { right: 5vw; }
+.t-side.tr3 { right: 5vw; margin-top: calc(var(--ball) * 0.24); }
+
+/* 金币：右上角浮标 */
+.title-coin { position: absolute; right: 22px; top: 18px; margin: 0; }
+
+/* 按钮：底部居中 */
+.title-btns {
+  position: absolute;
+  left: 50%;
+  bottom: 4.6vh;
+  width: min(430px, 88vw);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.title-btns .btn-row .ghost { flex: 1; min-width: 0; padding: 0 6px; font-size: 13.5px; }
 
 .title-hint {
-  margin-top: 16px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-size: 13.5px;
-  color: rgba(21,28,46,0.900);
-  background: rgba(240,223,174,0.420);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(240,223,174,0.126);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1vh;
+  text-align: center;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  color: rgba(240, 223, 174, 0.55);
+}
+
+/* 窄屏：球缩一档、两侧六宝收起（否则会挤到按钮上） */
+@media (max-width: 760px), (max-height: 560px) {
+  #title { --ball: min(430px, 54vh, 82vw); }
+  .t-side { display: none; }
+  .title-btns { width: min(360px, 92vw); bottom: 3.4vh; }
+  .title-btns .btn-row .ghost { font-size: 12.5px; }
 }
 
 /* 印章：方形、小圆角、内描金细线 */

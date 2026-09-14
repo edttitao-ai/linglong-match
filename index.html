@@ -79,6 +79,7 @@
 
   <!-- 加载 -->
   <div id="loading" class="overlay">
+    <img class="title-ball load-ball" src="assets/img/title_ball.png" alt="">
     <div class="panel load-panel">
       <div class="seal">玲珑</div>
       <h1 class="game-title" data-i18n="title">玲珑消</h1>
@@ -89,38 +90,43 @@
 
   <!-- 标题 -->
   <div id="title" class="overlay hidden">
-    <div class="title-wrap">
-      <div class="seal big">玲珑</div>
-      <h1 class="game-title" data-i18n="title">玲珑消</h1>
-      <img class="cloud-rule" src="assets/img/ui_cloud.svg" alt="">
-      <div class="sub" data-i18n="subtitle">三 消 · 国 风</div>
-      <div class="coin-pill" id="titleCoins">
-        <img src="assets/img/ui_coin.png" alt="">
-        <b>0</b>
-      </div>
-      <div class="btn-col">
-        <button id="btnPlay" class="primary" data-i18n="play">开始游戏</button>
-        <div class="btn-row">
-          <button id="btnDaily" class="ghost">
-            <span data-i18n="dailyTitle">每日挑战</span>
-            <i class="dot hidden" id="dailyDot"></i>
-          </button>
-          <button id="btnQuests" class="ghost">
-            <span data-i18n="questTitle">每日任务</span>
-            <i class="dot hidden" id="questDot"></i>
-          </button>
-        </div>
-        <div class="btn-row">
-          <button id="btnCheckin" class="ghost">
-            <span data-i18n="checkinShort">签到</span>
-            <i class="dot hidden" id="checkinDot"></i>
-          </button>
-          <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
-        </div>
-        <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
-      </div>
-      <div class="title-hint" data-i18n="titleHint">点击或拖动相邻两块交换，凑齐三连即可消除</div>
+    <img class="title-ball" src="assets/img/title_ball.png" alt="">
+    <img class="t-side tl1" src="assets/img/tile_jade.png" alt="">
+    <img class="t-side tl2" src="assets/img/tile_lantern.png" alt="">
+    <img class="t-side tl3" src="assets/img/tile_coin.png" alt="">
+    <img class="t-side tr1" src="assets/img/tile_fan.png" alt="">
+    <img class="t-side tr2" src="assets/img/tile_lotus.png" alt="">
+    <img class="t-side tr3" src="assets/img/tile_sachet.png" alt="">
+    <div class="coin-pill title-coin" id="titleCoins">
+      <img src="assets/img/ui_coin.png" alt="">
+      <b>0</b>
     </div>
+    <!-- 标题写在玉球的镂空圆窗里：玉球本身就是为名字做的框 -->
+    <div class="medal">
+      <div class="seal">玲珑</div>
+      <h1 class="game-title" data-i18n="title">玲珑消</h1>
+      <div class="title-sub" data-i18n="subtitle">三 消 · 国 风</div>
+    </div>
+    <div class="btn-col title-btns">
+      <button id="btnPlay" class="primary" data-i18n="play">开始游戏</button>
+      <div class="btn-row">
+        <button id="btnDaily" class="ghost">
+          <span data-i18n="dailyTitle">每日挑战</span>
+          <i class="dot hidden" id="dailyDot"></i>
+        </button>
+        <button id="btnQuests" class="ghost">
+          <span data-i18n="questTitle">每日任务</span>
+          <i class="dot hidden" id="questDot"></i>
+        </button>
+        <button id="btnCheckin" class="ghost">
+          <span data-i18n="checkinShort">签到</span>
+          <i class="dot hidden" id="checkinDot"></i>
+        </button>
+        <button id="btnLevels" class="ghost" data-i18n="levels">关卡选择</button>
+      </div>
+      <button id="btnSet" class="ghost" data-i18n="settings">设置</button>
+    </div>
+    <div class="title-hint" data-i18n="titleHint">点击或拖动相邻两块交换，凑齐三连即可消除</div>
   </div>
 
   <!-- 关卡地图 -->

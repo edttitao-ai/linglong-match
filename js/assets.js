@@ -54,6 +54,8 @@
     bg_paper: 'bg_paper.svg',
     bg_mountains: 'bg_mountains.svg',
     board_frame: 'board_frame.svg',
+    /* 标题页主视觉：白玉描金玲珑球（tools 里那套脚本生成的，球心圆窗留给标题） */
+    title_ball: 'title_ball.png',
     scroll_l1: 'scroll_l1.svg',
     scroll_l2: 'scroll_l2.svg',
     scroll_l3: 'scroll_l3.svg',
