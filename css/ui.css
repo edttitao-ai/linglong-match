@@ -332,31 +332,37 @@
   background: radial-gradient(120% 86% at 50% 34%, #16223C 0%, #0B1120 48%, #05070D 100%);
 }
 
-/* 玉球：整页的主视觉。尺寸跟着视口高度走，窄屏再压一档 */
+/* 玉球：整页的主视觉。尺寸跟着视口走，窄屏再压一档 */
 #title { --ball: min(500px, 62vh, 78vw); }
 
+/* 球 + 标题 + 按钮是一整组：由 .overlay 的 flex 居中整组，
+ * 组内再纵向排。分开贴边绝对定位的话，竖屏会在球和按钮之间空一大段，
+ * 横屏（比如 844×390）还会互相压。 */
+.title-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3.2vh;
+  width: min(430px, 88vw);
+  animation: riseIn 0.5s ease-out;
+}
+.ball-wrap { position: relative; width: var(--ball); max-width: 100%; }
+
 .title-ball {
-  position: absolute;
-  left: 50%;
-  top: 1.5vh;
-  width: var(--ball);
+  display: block;
+  width: 100%;
   height: auto;
-  transform: translateX(-50%);
   pointer-events: none;
   filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.75));
-  animation: ballIn 0.8s cubic-bezier(0.22, 0.9, 0.3, 1);
-}
-@keyframes ballIn {
-  from { opacity: 0; transform: translateX(-50%) scale(0.92); }
-  to { opacity: 1; transform: translateX(-50%) scale(1); }
 }
 
-/* 球心的圆窗：标题就写在里面（窗心 = 球的中心） */
+/* 球心的圆窗：标题就写在里面（圆心 = 球的中心） */
 .medal {
   position: absolute;
   left: 50%;
-  top: calc(1.5vh + var(--ball) * 0.5);
-  width: calc(var(--ball) * 0.46);
+  top: 50%;
+  width: 46%;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
@@ -428,13 +434,9 @@
 /* 金币：右上角浮标 */
 .title-coin { position: absolute; right: 22px; top: 18px; margin: 0; }
 
-/* 按钮：底部居中 */
+/* 按钮：跟着球、同一组里往下排 */
 .title-btns {
-  position: absolute;
-  left: 50%;
-  bottom: 4.6vh;
-  width: min(430px, 88vw);
-  transform: translateX(-50%);
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -445,19 +447,29 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 1vh;
+  bottom: 1.4vh;
   text-align: center;
   font-size: 12.5px;
   letter-spacing: 0.08em;
   color: rgba(240, 223, 174, 0.55);
 }
 
-/* 窄屏：球缩一档、两侧六宝收起（否则会挤到按钮上） */
+/* 窄屏 / 矮屏：球缩一档、两侧六宝收起（否则会挤到球上） */
 @media (max-width: 760px), (max-height: 560px) {
-  #title { --ball: min(430px, 54vh, 82vw); }
+  #title { --ball: min(430px, 52vh, 86vw); }
   .t-side { display: none; }
-  .title-btns { width: min(360px, 92vw); bottom: 3.4vh; }
+  .title-stage { width: min(360px, 92vw); gap: 2.6vh; }
   .title-btns .btn-row .ghost { font-size: 12.5px; }
+  .title-btns .primary { min-height: 48px; font-size: 18px; }
+  .title-btns .ghost { min-height: 42px; }
+}
+
+/* 横屏手机（矮而宽）：球与按钮左右并排，别硬叠成上下 */
+@media (max-height: 560px) and (orientation: landscape) {
+  #title { --ball: min(320px, 76vh, 40vw); }
+  .title-stage { flex-direction: row; align-items: center; gap: 5vw; width: auto; }
+  .title-btns { width: min(340px, 46vw); }
+  .title-hint { display: none; }
 }
 
 /* 印章：方形、小圆角、内描金细线 */
